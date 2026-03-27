@@ -1123,6 +1123,43 @@
     }
 
     // ── Add to Manager ───────────────────────────────────────────────────────────
+
+    function buildChildrenEntries(nodes, basePath) {
+      return nodes.map(n => {
+        const fullPath = basePath + '\\' + (n.name || 'Sem nome');
+        return {
+          id: generateId(),
+          label: n.name || 'Sem nome',
+          type: 'folder',
+          path: fullPath,
+          notes: '',
+          pinned: false,
+          children: buildChildrenEntries(n.children || [], fullPath)
+        };
+      });
+    }
+
+    function buildConfigEntry(nodes, label, icon, basePath) {
+      return {
+        id: generateId(),
+        label: label,
+        type: 'group',
+        icon: icon || '📁',
+        children: nodes.map(n => {
+          const fullPath = basePath + '\\' + (n.name || 'Sem nome');
+          return {
+            id: generateId(),
+            label: n.name || 'Sem nome',
+            type: 'folder',
+            path: fullPath,
+            notes: '',
+            pinned: false,
+            children: buildChildrenEntries(n.children || [], fullPath)
+          };
+        })
+      };
+    }
+
     async function addToManager() {
       collectTreeFromInputs();
 
@@ -1134,28 +1171,40 @@
       setLoading(true);
 
       try {
-        const resp = await fetch('/api/mkdir', {
+        // 1. Fetch current config
+        const getResp = await fetch('/api/config');
+        if (!getResp.ok) {
+          const err = await getResp.json().catch(() => ({}));
+          showToast('Erro ao ler config: ' + (err.error || getResp.status), 'error');
+          document.getElementById('btn-add-to-mgr').disabled = false;
+          return;
+        }
+        const config = await getResp.json();
+
+        // 2. Build new group entry from the already-created folderTree
+        const newEntry = buildConfigEntry(folderTree, label, icon, dest);
+
+        // 3. Append to config tree
+        if (!Array.isArray(config.tree)) config.tree = [];
+        config.tree.push(newEntry);
+
+        // 4. Save updated config
+        const postResp = await fetch('/api/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            base_path: dest,
-            tree: folderTree,
-            add_to_manager: true,
-            label: label,
-            icon: icon
-          })
+          body: JSON.stringify(config)
         });
 
-        const data = await resp.json();
+        const data = await postResp.json().catch(() => ({}));
 
-        if (!resp.ok || data.ok === false) {
-          showToast('Erro ao adicionar: ' + (data.error || 'falha'), 'error');
+        if (!postResp.ok || data.ok === false) {
+          showToast('Erro ao salvar config: ' + (data.error || 'falha'), 'error');
           document.getElementById('btn-add-to-mgr').disabled = false;
           return;
         }
 
+        // 5. Success — keep button disabled to prevent duplicate entries
         showToast('Adicionado ao Gerenciador!', 'success');
-        // Button stays disabled to prevent duplicates
 
       } catch (err) {
         showToast('Erro de rede: ' + err.message, 'error');
