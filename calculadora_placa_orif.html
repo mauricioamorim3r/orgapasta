@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Placa de Orifício — Teste de Poço</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --label: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1e2236 0%, #141720 100%); border-bottom: 1px solid var(--border); padding: 18px 24px; display: flex; align-items: center; gap: 16px; }
+  .header-logo { background: var(--accent); color: #fff; font-weight: 800; font-size: 11px; padding: 4px 8px; border-radius: 4px; letter-spacing: 1px; }
+  .header-title { font-size: 17px; font-weight: 600; }
+  .header-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .header-norm { margin-left: auto; font-size: 11px; color: var(--accent); background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); padding: 3px 10px; border-radius: 20px; }
+
+  /* Layout */
+  .main { display: grid; grid-template-columns: 360px 1fr; gap: 0; height: calc(100vh - 65px); }
+  .sidebar { overflow-y: auto; border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .results-area { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* Cards */
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .card-head { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--label); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .card-head .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .card-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Form fields */
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; color: var(--label); font-weight: 500; }
+  .field input, .field select {
+    background: #11141e; border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 7px 10px; font-size: 13px; width: 100%;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+  .field-unit { display: flex; gap: 6px; }
+  .field-unit input { flex: 1; }
+  .field-unit .unit { background: #11141e; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 11px; color: var(--muted); white-space: nowrap; display: flex; align-items: center; }
+
+  /* Fluid toggle */
+  .fluid-toggle { display: flex; gap: 8px; }
+  .fluid-btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; }
+  .fluid-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Plate presets */
+  .plate-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .preset-btn { flex: 1; min-width: 80px; padding: 8px 6px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.15s; text-align: center; }
+  .preset-btn:hover { border-color: var(--accent2); color: var(--text); }
+  .preset-btn.active { background: rgba(99,102,241,0.2); border-color: var(--accent2); color: var(--text); }
+  .preset-btn .ptag { font-size: 10px; color: var(--muted); display: block; margin-top: 2px; font-weight: 400; }
+
+  /* Two-col grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* Calc button */
+  .calc-btn { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; letter-spacing: 0.5px; transition: opacity 0.15s; }
+  .calc-btn:hover { opacity: 0.88; }
+
+  /* Status badge */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+  .badge.go { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .badge.warn { background: rgba(234,179,8,0.15); color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }
+  .badge.nogo { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Result metric */
+  .metric { background: #11141e; border-radius: 8px; padding: 12px 14px; border: 1px solid var(--border); }
+  .metric-label { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .metric-value { font-size: 22px; font-weight: 700; line-height: 1; }
+  .metric-unit { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .metric.ok .metric-value { color: var(--green); }
+  .metric.warn .metric-value { color: var(--yellow); }
+  .metric.bad .metric-value { color: var(--red); }
+  .metric.neutral .metric-value { color: var(--text); }
+
+  /* Criteria list */
+  .criteria { display: flex; flex-direction: column; gap: 6px; }
+  .criterion { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; background: #11141e; border: 1px solid var(--border); }
+  .criterion .icon { font-size: 14px; width: 20px; text-align: center; }
+  .criterion .label { flex: 1; font-size: 12px; color: var(--label); }
+  .criterion .val { font-size: 12px; font-weight: 600; }
+  .criterion.ok .val { color: var(--green); }
+  .criterion.ok { border-left: 3px solid var(--green); }
+  .criterion.warn .val { color: var(--yellow); }
+  .criterion.warn { border-left: 3px solid var(--yellow); }
+  .criterion.bad .val { color: var(--red); }
+  .criterion.bad { border-left: 3px solid var(--red); }
+
+  /* Progress bar */
+  .bar-wrap { background: #11141e; border-radius: 4px; height: 8px; overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .bar-fill.ok { background: var(--green); }
+  .bar-fill.warn { background: var(--yellow); }
+  .bar-fill.bad { background: var(--red); }
+
+  /* Comparison table */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .compare-table th { background: #11141e; padding: 8px 12px; text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .compare-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr.active-row td { background: rgba(59,130,246,0.07); }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Gauge */
+  .dp-gauge-wrap { position: relative; height: 32px; background: #11141e; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .dp-gauge-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 6px; transition: width 0.4s, background 0.4s; }
+  .dp-gauge-label { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.8); z-index: 1; }
+  .dp-gauge-limits { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.25); }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 13px; }
+
+  /* Info tooltip */
+  .hint { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Section title */
+  .section-title { font-size: 13px; font-weight: 700; color: var(--label); margin-bottom: 4px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">4 FLUX</div>
+  <div>
+    <div class="header-title">Calculadora — Placa de Orifício</div>
+    <div class="header-sub">3R Petroleum Offshore · DE-00122-24 · 4'' 300# · A240 TP.316</div>
+  </div>
+  <div class="header-norm">ISO 5167-2 · AGA-3</div>
+</div>
+
+<div class="main">
+  <!-- SIDEBAR: Inputs -->
+  <div class="sidebar">
+
+    <!-- Fluid Type -->
+    <div class="card">
+      <div class="card-head"><span class="dot" style="background:#3b82f6"></span>Fluido</div>
+      <div class="card-body">
+        <div class="fluid-toggle">
+          <button class="fluid-btn active" id="btn-gas" onclick="setFluid('gas')">⛽ Gás</button>
+          <button class="fluid-btn" id="btn-liq" onclick="setFluid('liquid')">💧 Líquido</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plate Selection -->
+    <div class="card">
+      <div class="card-head"><span class="dot" style="background:#6366f1"></span>Placa de Orifício</div>
+      <div class="card-body">
+        <div class="plate-presets">
+          <button class="preset-btn" id="preset-ppt17" onclick="loadPreset('PPT-17')">
+            PPT-17<span class="ptag">β = 0.21 · d = 21.10 mm</span>
+          </button>
+          <button class="preset-btn" id="preset-ppt50" onclick="loadPreset('PPT-50')">
+            PPT-50<span class="ptag">β = 0.30 · d = 30.73 mm</span>
+          </button>
+          <button class="preset-btn" id="preset-ppt51" onclick="loadPreset('PPT-51')">
+            PPT-51<span class="ptag">β = 0.40 · d = 41.33 mm</span>
+          </button>
+          <button class="preset-btn" id="preset-custom" onclick="loadPreset('custom')">
+            Custom<span class="ptag">inserir manualmente</span>
+          </button>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Diâmetro do Orifício d (mm)</label>
+            <input type="number" id="d_mm" value="30.73" step="0.01" onchange="recalcBeta()">
+          </div>
+          <div class="field">
+            <label>Diâmetro Interno D (mm)</label>
+            <input type="number" id="D_mm" value="102.26" step="0.01" onchange="recalcBeta()">
+          </div>
+        </div>
+        <div class="field">
+          <label>β (calculado automaticamente)</label>
+          <input type="text" id="beta_display" value="0.3006" readonly style="background:#0d1018;color:var(--accent);font-weight:600;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Condições Operacionais - GÁS -->
+    <div class="card" id="card-gas">
+      <div class="card-head"><span class="dot" style="background:#22c55e"></span>Condições Operacionais — Gás</div>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field">
+            <label>P₁ Pressão Montante</label>
+            <div class="field-unit">
+              <input type="number" id="P1_kPa" value="3000" step="10">
+              <span class="unit">kPa abs</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>T₁ Temperatura</label>
+            <div class="field-unit">
+              <input type="number" id="T1_C" value="40" step="1">
+              <span class="unit">°C</span>
+            </div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Gravidade Específica γ</label>
+            <input type="number" id="gamma_gas" value="0.65" step="0.01" min="0.5" max="1.5" title="Relativo ao ar = 1.0">
+            <span class="hint">Relativo ao ar (ar = 1.0)</span>
+          </div>
+          <div class="field">
+            <label>Fator Z</label>
+            <input type="number" id="Z_factor" value="0.88" step="0.01" min="0.4" max="1.1">
+            <span class="hint">Compressibilidade real</span>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Viscosidade μ</label>
+            <div class="field-unit">
+              <input type="number" id="mu_gas" value="0.012" step="0.001">
+              <span class="unit">cP</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Exp. Isentrópico κ</label>
+            <input type="number" id="kappa" value="1.27" step="0.01" min="1.0" max="1.7">
+            <span class="hint">≈ 1.27 gás natural</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vazão de Gás Qg</label>
+          <div class="field-unit">
+            <input type="number" id="Qg_sm3d" value="50000" step="1000">
+            <span class="unit">Sm³/d</span>
+          </div>
+          <span class="hint">Condições padrão: 20°C, 101.325 kPa</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Condições Operacionais - LÍQUIDO -->
+    <div class="card" id="card-liq" style="display:none">
+      <div class="card-head"><span class="dot" style="background:#22c55e"></span>Condições Operacionais — Líquido</div>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field">
+            <label>Densidade ρ</label>
+            <div class="field-unit">
+              <input type="number" id="rho_liq" value="850" step="1">
+              <span class="unit">kg/m³</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Viscosidade μ</label>
+            <div class="field-unit">
+              <input type="number" id="mu_liq" value="2.5" step="0.1">
+              <span class="unit">cP</span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vazão de Líquido Ql</label>
+          <div class="field-unit">
+            <input type="number" id="Ql_m3h" value="30" step="1">
+            <span class="unit">m³/h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transmissor -->
+    <div class="card">
+      <div class="card-head"><span class="dot" style="background:#eab308"></span>Transmissor ΔP</div>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field">
+            <label>Fundo de Escala (FS)</label>
+            <div class="field-unit">
+              <input type="number" id="dP_max" value="25" step="5">
+              <span class="unit">kPa</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Zero (LRV)</label>
+            <div class="field-unit">
+              <input type="number" id="dP_min" value="0" step="1">
+              <span class="unit">kPa</span>
+            </div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:4px;">Limites recomendados: 20–80% da escala. Mínimo aceitável: 10–90%.</div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">▶ CALCULAR</button>
+
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-area" id="results-area">
+    <div class="empty">
+      <div class="icon">🔢</div>
+      <p>Preencha as condições e clique em <strong>CALCULAR</strong></p>
+    </div>
+  </div>
+</div>
+
+<script>
+let fluidType = 'gas';
+
+function setFluid(type) {
+  fluidType = type;
+  document.getElementById('btn-gas').classList.toggle('active', type === 'gas');
+  document.getElementById('btn-liq').classList.toggle('active', type === 'liquid');
+  document.getElementById('card-gas').style.display = type === 'gas' ? '' : 'none';
+  document.getElementById('card-liq').style.display = type === 'liquid' ? '' : 'none';
+}
+
+const PRESETS = {
+  'PPT-17': { d: 21.10, D: 102.26, tag: 'PPT-17' },
+  'PPT-50': { d: 30.73, D: 102.26, tag: 'PPT-50' },
+  'PPT-51': { d: 41.33, D: 102.26, tag: 'PPT-51' },
+  'custom': null
+};
+
+function loadPreset(name) {
+  ['PPT-17','PPT-50','PPT-51','custom'].forEach(k => {
+    const id = 'preset-' + k.toLowerCase().replace('-','');
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', k === name);
+  });
+  if (name !== 'custom' && PRESETS[name]) {
+    document.getElementById('d_mm').value = PRESETS[name].d;
+    document.getElementById('D_mm').value = PRESETS[name].D;
+    recalcBeta();
+  }
+}
+
+function recalcBeta() {
+  const d = parseFloat(document.getElementById('d_mm').value) || 0;
+  const D = parseFloat(document.getElementById('D_mm').value) || 1;
+  document.getElementById('beta_display').value = (d / D).toFixed(4);
+}
+
+// ---- ISO 5167-2: Reader-Harris/Gallagher (RHG) — Flange Taps ----
+function calcC_RHG(beta, ReD, D_mm) {
+  if (ReD < 100) ReD = 100;
+  const L1 = 25.4 / D_mm;
+  const L2p = 25.4 / D_mm;
+  const A = Math.pow(19000 * beta / ReD, 0.8);
+  const M2p = 2 * L2p / (1 - beta);
+
+  const C = 0.5961
+    + 0.0261 * beta ** 2
+    - 0.216 * beta ** 8
+    + 0.000521 * Math.pow(1e6 * beta / ReD, 0.7)
+    + (0.0188 + 0.0063 * A) * Math.pow(beta, 3.5) * Math.pow(1e6 / ReD, 0.3)
+    + (0.043 + 0.080 * Math.exp(-10 * L1) - 0.123 * Math.exp(-7 * L1))
+      * (1 - 0.11 * A) * Math.pow(beta, 4) / (1 - Math.pow(beta, 4))
+    - 0.031 * (M2p - 0.8 * Math.pow(M2p, 1.1)) * Math.pow(beta, 1.3);
+
+  return C;
+}
+
+// Fator de expansão Y (gás) — ISO 5167-2
+function calcY(beta, dP_Pa, P1_Pa, kappa) {
+  if (dP_Pa <= 0 || P1_Pa <= 0) return 1.0;
+  const tau = 1 - dP_Pa / P1_Pa;
+  if (tau <= 0) return 0.9;
+  const Y = 1 - (0.351 + 0.256 * Math.pow(beta, 4) + 0.93 * Math.pow(beta, 8))
+    * (1 - Math.pow(tau, 1 / kappa));
+  return Y;
+}
+
+// Calcula ΔP dado vazão mássica (kg/s) — iterativo
+function calcDP_from_qm(qm_kgs, D_mm, d_mm, rho1, mu_cP, isGas, P1_Pa, kappa) {
+  const D = D_mm / 1e3;
+  const d = d_mm / 1e3;
+  const beta = d / D;
+  const A_d = Math.PI / 4 * d * d;
+  const mu = mu_cP * 1e-3;
+  const Ev = 1 / Math.sqrt(1 - Math.pow(beta, 4));
+
+  let C = 0.606;
+  let Y = 1.0;
+  let dP_Pa = 0;
+  let ReD = 1e5;
+
+  for (let i = 0; i < 30; i++) {
+    const prevC = C, prevY = Y;
+    dP_Pa = Math.pow(qm_kgs / (C * Ev * Y * A_d), 2) / (2 * rho1);
+    const vD = qm_kgs / (rho1 * Math.PI / 4 * D * D);
+    ReD = rho1 * vD * D / mu;
+    C = calcC_RHG(beta, ReD, D_mm);
+    if (isGas) Y = calcY(beta, dP_Pa, P1_Pa, kappa);
+    if (Math.abs(C - prevC) < 1e-7 && Math.abs(Y - prevY) < 1e-6) break;
+  }
+
+  return { dP_Pa, C, Y, ReD, beta };
+}
+
+// Calcula vazão (kg/s) dado ΔP (Pa) — iterativo
+function calcQm_from_dP(dP_Pa, D_mm, d_mm, rho1, mu_cP, isGas, P1_Pa, kappa) {
+  const D = D_mm / 1e3;
+  const d = d_mm / 1e3;
+  const beta = d / D;
+  const A_d = Math.PI / 4 * d * d;
+  const mu = mu_cP * 1e-3;
+  const Ev = 1 / Math.sqrt(1 - Math.pow(beta, 4));
+
+  let C = 0.606;
+  let Y = 1.0;
+  let qm = 0;
+  let ReD = 1e5;
+
+  for (let i = 0; i < 30; i++) {
+    const prevC = C, prevY = Y;
+    if (isGas) Y = calcY(beta, dP_Pa, P1_Pa, kappa);
+    qm = C * Ev * Y * A_d * Math.sqrt(2 * dP_Pa * rho1);
+    const vD = qm / (rho1 * Math.PI / 4 * D * D);
+    ReD = rho1 * vD * D / mu;
+    C = calcC_RHG(beta, ReD, D_mm);
+    if (Math.abs(C - prevC) < 1e-7 && Math.abs(Y - prevY) < 1e-6) break;
+  }
+  return { qm_kgs: qm, C, Y, ReD, beta };
+}
+
+function fmtNum(n, dec) { return n.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+function fmtSci(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + ' M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + ' k';
+  return n.toFixed(0);
+}
+
+function statusClass(ok, warn) {
+  if (ok) return 'ok';
+  if (warn) return 'warn';
+  return 'bad';
+}
+
+function calculate() {
+  const D_mm = parseFloat(document.getElementById('D_mm').value);
+  const d_mm = parseFloat(document.getElementById('d_mm').value);
+  const dP_fs = parseFloat(document.getElementById('dP_max').value);
+  const dP_lrv = parseFloat(document.getElementById('dP_min').value);
+  const dP_span = dP_fs - dP_lrv;
+
+  if (!D_mm || !d_mm || d_mm >= D_mm) {
+    alert('Verifique as dimensões D e d.');
+    return;
+  }
+
+  let rho1, mu, qm_kgs, P1_Pa = 0, kappa = 1.27, isGas;
+
+  if (fluidType === 'gas') {
+    isGas = true;
+    const P1_kPa = parseFloat(document.getElementById('P1_kPa').value);
+    const T1_C = parseFloat(document.getElementById('T1_C').value);
+    const gamma = parseFloat(document.getElementById('gamma_gas').value);
+    const Z = parseFloat(document.getElementById('Z_factor').value);
+    mu = parseFloat(document.getElementById('mu_gas').value);
+    kappa = parseFloat(document.getElementById('kappa').value);
+    const Qg_sm3d = parseFloat(document.getElementById('Qg_sm3d').value);
+
+    P1_Pa = P1_kPa * 1000;
+    const T1_K = T1_C + 273.15;
+    const M_gas = gamma * 28.97; // kg/kmol
+    const R_univ = 8314.46; // J/(kmol·K)
+    rho1 = P1_Pa * M_gas / (Z * R_univ * T1_K); // kg/m³
+
+    // Converter Sm³/d → kg/s (condições padrão: 20°C, 101325 Pa, Z=1)
+    const T_std = 293.15, P_std = 101325;
+    const rho_std = P_std * M_gas / (R_univ * T_std);
+    qm_kgs = Qg_sm3d * rho_std / 86400;
+
+  } else {
+    isGas = false;
+    rho1 = parseFloat(document.getElementById('rho_liq').value);
+    mu = parseFloat(document.getElementById('mu_liq').value);
+    const Ql_m3h = parseFloat(document.getElementById('Ql_m3h').value);
+    qm_kgs = rho1 * Ql_m3h / 3600;
+  }
+
+  // --- Cálculo principal ---
+  const res = calcDP_from_qm(qm_kgs, D_mm, d_mm, rho1, mu, isGas, P1_Pa, kappa);
+  const dP_calc_kPa = res.dP_Pa / 1000;
+  const pct = (dP_calc_kPa - dP_lrv) / dP_span * 100;
+  const beta = d_mm / D_mm;
+
+  // Limites ΔP %
+  const dP_min_op = dP_lrv + dP_span * 0.20; // 20% ideal
+  const dP_max_op = dP_lrv + dP_span * 0.80; // 80% ideal
+  const dP_min_abs = dP_lrv + dP_span * 0.10; // 10% absoluto
+  const dP_max_abs = dP_lrv + dP_span * 0.90; // 90% absoluto
+
+  const dp_ok = dP_calc_kPa >= dP_min_op && dP_calc_kPa <= dP_max_op;
+  const dp_warn = !dp_ok && dP_calc_kPa >= dP_min_abs && dP_calc_kPa <= dP_max_abs;
+  const dp_bad = dP_calc_kPa < dP_min_abs || dP_calc_kPa > dP_max_abs;
+
+  const beta_ok = beta >= 0.20 && beta <= 0.75;
+  const beta_ideal = beta >= 0.30 && beta <= 0.65;
+  const re_ok = res.ReD >= 5000;
+  const re_ideal = res.ReD >= 20000;
+  const y_ok = !isGas || res.Y >= 0.90;
+  const y_warn = isGas && res.Y >= 0.80 && res.Y < 0.90;
+
+  // Vazão na escala cheia e em 20%
+  const resFS = calcQm_from_dP((dP_fs - dP_lrv) * 1000, D_mm, d_mm, rho1, mu, isGas, P1_Pa, kappa);
+  const res20 = calcQm_from_dP((dP_span * 0.20) * 1000, D_mm, d_mm, rho1, mu, isGas, P1_Pa, kappa);
+
+  let qFS_label, q20_label;
+  if (isGas) {
+    const T_std = 293.15, P_std = 101325;
+    const M_gas = parseFloat(document.getElementById('gamma_gas').value) * 28.97;
+    const R_univ = 8314.46;
+    const rho_std = P_std * M_gas / (R_univ * T_std);
+    const toSm3d = rho_std > 0 ? 86400 / rho_std : 0;
+    qFS_label = fmtNum(resFS.qm_kgs * toSm3d / 1000, 1) + ' MSm³/d';
+    q20_label = fmtNum(res20.qm_kgs * toSm3d / 1000, 1) + ' MSm³/d';
+  } else {
+    qFS_label = fmtNum(resFS.qm_kgs / rho1 * 3600, 1) + ' m³/h';
+    q20_label = fmtNum(res20.qm_kgs / rho1 * 3600, 1) + ' m³/h';
+  }
+
+  // Status global
+  const dp_status = dp_ok ? 'go' : dp_warn ? 'warn' : 'nogo';
+  const allGo = dp_ok && beta_ok && re_ok && y_ok;
+  const anyBad = dp_bad || !beta_ok || !re_ok || !y_ok;
+  const globalStatus = allGo ? 'go' : anyBad ? 'nogo' : 'warn';
+
+  // Comparativo das 3 placas
+  const plates = [
+    { tag: 'PPT-17', d: 21.10 },
+    { tag: 'PPT-50', d: 30.73 },
+    { tag: 'PPT-51', d: 41.33 }
+  ];
+
+  let compareRows = '';
+  for (const pl of plates) {
+    const r = calcDP_from_qm(qm_kgs, D_mm, pl.d, rho1, mu, isGas, P1_Pa, kappa);
+    const p = (r.dP_Pa / 1000 - dP_lrv) / dP_span * 100;
+    const b = pl.d / D_mm;
+    const ok_dp = p >= 10 && p <= 90;
+    const ok_b = b >= 0.20 && b <= 0.75;
+    const ok_re = r.ReD >= 5000;
+    const isActive = Math.abs(pl.d - d_mm) < 0.01;
+
+    let rowStatus, rowIcon;
+    if (ok_dp && ok_b && ok_re) { rowStatus = '#22c55e'; rowIcon = '✓'; }
+    else if (!ok_dp || !ok_re) { rowStatus = '#ef4444'; rowIcon = '✗'; }
+    else { rowStatus = '#eab308'; rowIcon = '⚠'; }
+
+    const barPct = Math.min(100, Math.max(0, p));
+    const barColor = p >= 20 && p <= 80 ? '#22c55e' : p >= 10 && p <= 90 ? '#eab308' : '#ef4444';
+
+    compareRows += `
+      <tr class="${isActive ? 'active-row' : ''}">
+        <td><strong style="color:${isActive ? 'var(--accent)' : 'var(--text)'}">${pl.tag}</strong></td>
+        <td>${pl.d.toFixed(2)}</td>
+        <td>${b.toFixed(3)}</td>
+        <td>${fmtNum(r.dP_Pa / 1000, 2)} kPa</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;background:#11141e;border-radius:3px;height:6px;overflow:hidden">
+              <div style="width:${barPct}%;height:100%;background:${barColor};border-radius:3px"></div>
+            </div>
+            <span style="font-size:11px;color:${barColor};width:36px;text-align:right">${p.toFixed(0)}%</span>
+          </div>
+        </td>
+        <td>${fmtSci(r.ReD)}</td>
+        <td><span style="color:${rowStatus};font-weight:700">${rowIcon} ${rowStatus === '#22c55e' ? 'GO' : rowStatus === '#ef4444' ? 'NO-GO' : 'WARN'}</span></td>
+      </tr>`;
+  }
+
+  const barPct = Math.min(100, Math.max(0, pct));
+  const barColor = dp_ok ? '#22c55e' : dp_warn ? '#eab308' : '#ef4444';
+
+  const globalBadge = globalStatus === 'go'
+    ? `<span class="badge go">✓ PLACA APROVADA — GO</span>`
+    : globalStatus === 'warn'
+    ? `<span class="badge warn">⚠ ATENÇÃO — VERIFICAR CRITÉRIOS</span>`
+    : `<span class="badge nogo">✗ PLACA REPROVADA — NO-GO</span>`;
+
+  const yRow = isGas ? `
+    <div class="criterion ${y_ok ? (y_warn ? 'warn' : 'ok') : 'bad'}">
+      <span class="icon">${y_ok ? '✓' : y_warn ? '⚠' : '✗'}</span>
+      <span class="label">Fator de Expansão Y</span>
+      <span class="val">Y = ${res.Y.toFixed(4)}</span>
+    </div>` : '';
+
+  document.getElementById('results-area').innerHTML = `
+
+    <!-- Título + status global -->
+    <div class="card">
+      <div class="card-body" style="flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">RESULTADO GLOBAL — Placa d=${d_mm} mm · β=${beta.toFixed(4)}</div>
+          ${globalBadge}
+        </div>
+        <div style="margin-left:auto;font-size:11px;color:var(--muted);text-align:right">
+          C<sub>d</sub> = ${res.C.toFixed(4)}<br>
+          ${isGas ? 'Y = ' + res.Y.toFixed(4) : 'Y = 1.0000 (líq.)'}
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas principais -->
+    <div class="grid3">
+      <div class="metric ${dp_ok ? 'ok' : dp_warn ? 'warn' : 'bad'}">
+        <div class="metric-label">ΔP Calculado</div>
+        <div class="metric-value">${fmtNum(dP_calc_kPa, 2)}</div>
+        <div class="metric-unit">kPa  (${pct.toFixed(1)}% da escala)</div>
+        <div class="bar-wrap" style="margin-top:8px">
+          <div class="bar-fill ${dp_ok ? 'ok' : dp_warn ? 'warn' : 'bad'}" style="width:${barPct}%"></div>
+        </div>
+      </div>
+      <div class="metric neutral">
+        <div class="metric-label">Re<sub>D</sub> (Número de Reynolds)</div>
+        <div class="metric-value" style="color:${re_ideal ? 'var(--green)' : re_ok ? 'var(--yellow)' : 'var(--red)'}">${fmtSci(res.ReD)}</div>
+        <div class="metric-unit">${re_ideal ? 'Turbulência plena ✓' : re_ok ? 'Aceitável (>5.000) ⚠' : 'Insuficiente (<5.000) ✗'}</div>
+      </div>
+      <div class="metric neutral">
+        <div class="metric-label">β ratio</div>
+        <div class="metric-value" style="color:${beta_ideal ? 'var(--green)' : beta_ok ? 'var(--yellow)' : 'var(--red)'}">${beta.toFixed(4)}</div>
+        <div class="metric-unit">${beta_ideal ? 'Faixa ideal (0.30–0.65) ✓' : beta_ok ? 'Aceitável (0.20–0.75) ⚠' : 'Fora da norma ✗'}</div>
+      </div>
+    </div>
+
+    <!-- Faixa de operação do transmissor -->
+    <div class="card">
+      <div class="card-head"><span class="dot" style="background:#eab308"></span>Faixa de Operação — Transmissor ΔP (0 – ${dP_fs} kPa)</div>
+      <div class="card-body">
+        <div style="position:relative;background:#11141e;border-radius:8px;height:44px;overflow:hidden;border:1px solid var(--border)">
+          <!-- 20% e 80% markers -->
+          <div style="position:absolute;left:20%;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.15)"></div>
+          <div style="position:absolute;left:80%;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.15)"></div>
+          <!-- zona verde 20-80% -->
+          <div style="position:absolute;left:20%;width:60%;top:0;bottom:0;background:rgba(34,197,94,0.07)"></div>
+          <!-- barra do ΔP calculado -->
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${barPct}%;background:${barColor};opacity:0.75;border-radius:8px;transition:width 0.4s"></div>
+          <div style="position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.9)">
+            ΔP = ${fmtNum(dP_calc_kPa, 2)} kPa  (${pct.toFixed(1)}%)
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;padding:0 2px">
+          <span>0 kPa (0%)</span>
+          <span style="color:var(--green)">◄ Zona ideal (20–80%) ►</span>
+          <span>${dP_fs} kPa (100%)</span>
+        </div>
+        <div class="grid2" style="margin-top:8px">
+          <div class="metric neutral" style="padding:10px 12px">
+            <div class="metric-label">Qmáx (100% FS)</div>
+            <div class="metric-value" style="font-size:16px;color:var(--text)">${qFS_label}</div>
+          </div>
+          <div class="metric neutral" style="padding:10px 12px">
+            <div class="metric-label">Qmín (20% FS)</div>
+            <div class="metric-value" style="font-size:16px;color:var(--text)">${q20_label}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Critérios detalhados -->
+    <div class="card">
+      <div class="card-head"><span class="dot" style="background:#3b82f6"></span>Critérios de Aprovação — ISO 5167-2</div>
+      <div class="card-body">
+        <div class="criteria">
+          <div class="criterion ${dp_ok ? 'ok' : dp_warn ? 'warn' : 'bad'}">
+            <span class="icon">${dp_ok ? '✓' : dp_warn ? '⚠' : '✗'}</span>
+            <span class="label">ΔP na faixa do transmissor</span>
+            <span class="val">${fmtNum(dP_calc_kPa,2)} kPa = ${pct.toFixed(1)}% · Ideal: 20–80%</span>
+          </div>
+          <div class="criterion ${beta_ideal ? 'ok' : beta_ok ? 'warn' : 'bad'}">
+            <span class="icon">${beta_ideal ? '✓' : beta_ok ? '⚠' : '✗'}</span>
+            <span class="label">Beta ratio (ISO 5167-2)</span>
+            <span class="val">β = ${beta.toFixed(4)} · Norma: 0.20–0.75 · Ideal: 0.30–0.65</span>
+          </div>
+          <div class="criterion ${re_ideal ? 'ok' : re_ok ? 'warn' : 'bad'}">
+            <span class="icon">${re_ideal ? '✓' : re_ok ? '⚠' : '✗'}</span>
+            <span class="label">Número de Reynolds Re<sub>D</sub></span>
+            <span class="val">Re = ${fmtSci(res.ReD)} · Mín. norma: 5.000 · Ideal: >20.000</span>
+          </div>
+          ${yRow}
+          <div class="criterion ok">
+            <span class="icon">ℹ</span>
+            <span class="label">Coeficiente de descarga C<sub>d</sub></span>
+            <span class="val">C = ${res.C.toFixed(5)} · RHG (flange taps)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparativo das 3 placas -->
+    <div class="card">
+      <div class="card-head"><span class="dot" style="background:#6366f1"></span>Comparativo — Placas DE-00122-24 (D = ${D_mm} mm · 4'' 300#)</div>
+      <div class="card-body" style="padding:0">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>TAG</th>
+              <th>d (mm)</th>
+              <th>β</th>
+              <th>ΔP</th>
+              <th style="min-width:160px">% Escala</th>
+              <th>Re<sub>D</sub></th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>${compareRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+  `;
+}
+
+// Init
+loadPreset('PPT-50');
+recalcBeta();
+</script>
+</body>
+</html>

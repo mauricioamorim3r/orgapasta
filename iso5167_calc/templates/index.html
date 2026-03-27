@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISO 5167-2 — Placa de Orifício</title>
+<style>
+:root {
+  --bg:#080a10;--s1:#0e1018;--s2:#13161f;--s3:#181b27;
+  --bd:#1e2235;--bd2:#252a3d;
+  --acc:#3272e8;--acc-d:rgba(50,114,232,.13);
+  --green:#10b981;--green-d:rgba(16,185,129,.13);
+  --amber:#f59e0b;--amber-d:rgba(245,158,11,.13);
+  --red:#ef4444;--red-d:rgba(239,68,68,.13);
+  --purple:#8b5cf6;
+  --t1:#dde3f0;--t2:#8895b3;--t3:#4b5672;
+  --r:8px;--r2:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;height:100%}
+body{background:var(--bg);color:var(--t1);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+.hdr{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--bd);background:var(--s1);position:sticky;top:0;z-index:100;flex-shrink:0;flex-wrap:wrap;row-gap:6px}
+.hdr-logo{background:var(--acc);color:#fff;font-size:10px;font-weight:800;padding:3px 8px;border-radius:4px;letter-spacing:.8px;white-space:nowrap}
+.hdr-title{font-size:14px;font-weight:600;line-height:1.2}
+.hdr-sub{font-size:11px;color:var(--t3)}
+.hdr-norm{margin-left:auto;font-size:10px;color:var(--acc);background:var(--acc-d);border:1px solid rgba(50,114,232,.25);padding:3px 10px;border-radius:20px;white-space:nowrap}
+.btn-free{font-size:11px;font-weight:600;color:var(--t2);background:var(--s3);border:1px solid var(--bd2);border-radius:6px;padding:5px 12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-free:hover{color:var(--t1);border-color:var(--acc)}
+
+.progress-bar{height:2px;background:var(--bd);flex-shrink:0}
+.progress-fill{height:100%;background:var(--acc);transition:width .4s ease}
+
+#wizard{flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 16px 48px;overflow-y:auto}
+.step-wrap{width:100%;max-width:620px}
+.step-label{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--t3);text-transform:uppercase;margin-bottom:5px}
+.step-title{font-size:20px;font-weight:700;margin-bottom:4px;line-height:1.25}
+.step-desc{font-size:13px;color:var(--t2);margin-bottom:24px;line-height:1.5}
+
+.choices{display:flex;flex-direction:column;gap:9px}
+.choice-card{display:flex;align-items:flex-start;gap:13px;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .15s;position:relative}
+.choice-card:hover{border-color:var(--bd2);background:var(--s3)}
+.choice-card.selected{border-color:var(--acc);background:var(--acc-d)}
+.choice-card .icon{font-size:20px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--s3);border-radius:8px;flex-shrink:0}
+.choice-card .lbl{font-size:13px;font-weight:600;margin-bottom:2px}
+.choice-card .note{font-size:12px;color:var(--t2);line-height:1.4}
+.choice-card .ref{font-size:10px;color:var(--acc);margin-top:4px;font-family:monospace}
+.choice-card .chk{position:absolute;top:12px;right:12px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff}
+.choice-card.selected .chk{background:var(--acc);border-color:var(--acc)}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.form-grid.g3{grid-template-columns:1fr 1fr 1fr}
+.form-grid.g1{grid-template-columns:1fr}
+@media(max-width:480px){.form-grid,.form-grid.g3{grid-template-columns:1fr}}
+
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:600;color:var(--t2);letter-spacing:.2px}
+.field-row{display:flex;gap:5px}
+.field-row input{flex:1;min-width:0}
+.unit-tag{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:0 9px;font-size:11px;color:var(--t3);display:flex;align-items:center;white-space:nowrap}
+input,select{background:var(--s1);border:1px solid var(--bd);color:var(--t1);border-radius:6px;padding:8px 10px;font-size:13px;width:100%;transition:border-color .15s;font-family:inherit}
+input:focus,select:focus{outline:none;border-color:var(--acc)}
+input[readonly]{color:var(--acc);font-weight:600;cursor:default}
+.hint{font-size:10px;color:var(--t3)}
+
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.preset-btn{background:var(--s2);border:1px solid var(--bd);color:var(--t2);border-radius:6px;padding:6px 11px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center}
+.preset-btn:hover{border-color:var(--bd2);color:var(--t1)}
+.preset-btn.active{background:rgba(139,92,246,.15);border-color:var(--purple);color:var(--t1)}
+.preset-sub{font-size:10px;color:var(--t3);display:block;font-weight:400;margin-top:1px}
+
+.beta-display{background:var(--s3);border:1px solid var(--bd2);border-radius:8px;padding:11px 14px;display:flex;gap:20px;margin-top:6px;flex-wrap:wrap}
+.bkv .k{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.bkv .v{font-size:15px;font-weight:700}
+.bkv .v.ok{color:var(--green)}.bkv .v.warn{color:var(--amber)}.bkv .v.bad{color:var(--red)}
+
+.sec-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:14px;margin-bottom:12px}
+.sec-head{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.sec-head .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+.nav-row{display:flex;gap:9px;margin-top:24px}
+.btn-back{background:var(--s2);border:1px solid var(--bd);color:var(--t2);border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-back:hover{border-color:var(--bd2);color:var(--t1)}
+.btn-next{flex:1;background:var(--acc);border:none;color:#fff;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-next:hover{opacity:.88}
+.btn-next:disabled{opacity:.35;cursor:not-allowed}
+.btn-calc{flex:1;background:linear-gradient(135deg,#3272e8,#5b4ff5);border:none;color:#fff;border-radius:8px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-calc:hover{opacity:.88}
+
+/* Results */
+#results{flex:1;padding:22px 16px 48px;display:flex;flex-direction:column;align-items:center;overflow-y:auto}
+.res-wrap{width:100%;max-width:940px}
+
+.verdict{border-radius:var(--r2);padding:16px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.verdict.go {background:var(--green-d);border:1.5px solid rgba(16,185,129,.35)}
+.verdict.warn{background:var(--amber-d);border:1.5px solid rgba(245,158,11,.35)}
+.verdict.nogo{background:var(--red-d)  ;border:1.5px solid rgba(239,68,68,.35)}
+.verdict-icon{font-size:28px}
+.verdict-title{font-size:18px;font-weight:800}
+.verdict.go .verdict-title{color:var(--green)}.verdict.warn .verdict-title{color:var(--amber)}.verdict.nogo .verdict-title{color:var(--red)}
+.verdict-sub{font-size:12px;color:var(--t2);margin-top:2px}
+.btn-edit{margin-left:auto;background:var(--s2);border:1px solid var(--bd2);color:var(--t2);border-radius:6px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-edit:hover{color:var(--t1);border-color:var(--acc)}
+
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px;margin-bottom:14px}
+.metric{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:13px}
+.metric-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.metric-val{font-size:22px;font-weight:800;line-height:1}
+.metric-unit{font-size:11px;color:var(--t2);margin-top:3px}
+.metric.ok .metric-val{color:var(--green)}.metric.warn .metric-val{color:var(--amber)}.metric.bad .metric-val{color:var(--red)}.metric.neu .metric-val{color:var(--t1)}
+
+.gauge-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:14px;margin-bottom:14px}
+.gauge-title{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:11px}
+.gauge-track{position:relative;background:var(--s1);border-radius:6px;height:34px;overflow:hidden;border:1px solid var(--bd)}
+.gauge-fill{position:absolute;left:0;top:0;height:100%;border-radius:6px;transition:width .5s ease}
+.gauge-lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);z-index:1}
+.gauge-mark{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.2);z-index:2}
+.gauge-marks-label{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--t3);padding:0 2px}
+.gauge-range{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}
+.gauge-kv{background:var(--s1);border-radius:6px;padding:9px 11px;border:1px solid var(--bd)}
+.gauge-kv .k{font-size:10px;color:var(--t3);margin-bottom:3px}
+.gauge-kv .v{font-size:14px;font-weight:700}
+
+.criteria-list{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.crit-head{padding:9px 13px;border-bottom:1px solid var(--bd);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;display:flex;gap:7px;align-items:center}
+.crit{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid rgba(255,255,255,.025)}
+.crit:last-child{border-bottom:none}
+.crit-bar{width:3px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.crit.ok .crit-bar{background:var(--green)}.crit.warn .crit-bar{background:var(--amber)}.crit.bad .crit-bar{background:var(--red)}.crit.info .crit-bar{background:var(--acc)}
+.crit-icon{font-size:13px;width:20px;text-align:center;flex-shrink:0}
+.crit-name{font-size:12px;font-weight:600;color:var(--t1)}
+.crit-label{flex:1;font-size:11px;color:var(--t3)}
+.crit-val{font-size:12px;font-weight:600;text-align:right}
+.crit.ok .crit-val{color:var(--green)}.crit.warn .crit-val{color:var(--amber)}.crit.bad .crit-val{color:var(--red)}.crit.info .crit-val{color:var(--acc)}
+
+.cmp-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.cmp-head{padding:9px 13px;border-bottom:1px solid var(--bd);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px}
+.cmp-table{width:100%;border-collapse:collapse;font-size:12px}
+.cmp-table th{background:var(--s1);padding:7px 11px;text-align:left;color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--bd)}
+.cmp-table td{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.025)}
+.cmp-table tr:last-child td{border-bottom:none}
+.cmp-table tr.cur td{background:rgba(50,114,232,.07)}
+.bar-mini{display:flex;align-items:center;gap:6px}
+.bar-track{flex:1;height:5px;background:var(--s1);border-radius:3px;overflow:hidden}
+.bar-fill-mini{height:100%;border-radius:3px}
+
+.unc-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:13px;margin-bottom:14px}
+.unc-head{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:9px}
+.unc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:7px}
+.unc-item{background:var(--s1);border-radius:6px;padding:9px 11px;border:1px solid var(--bd)}
+.unc-k{font-size:10px;color:var(--t3);margin-bottom:2px}
+.unc-v{font-size:14px;font-weight:700}
+
+/* Welcome */
+.welcome-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:36px 16px;max-width:540px;margin:0 auto}
+.welcome-logo{width:58px;height:58px;background:var(--acc-d);border:1px solid rgba(50,114,232,.3);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:18px}
+.welcome-title{font-size:26px;font-weight:800;margin-bottom:7px}
+.welcome-sub{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:28px}
+.welcome-actions{display:flex;gap:11px;width:100%;flex-wrap:wrap}
+.btn-wizard{flex:1;min-width:150px;background:var(--acc);border:none;color:#fff;border-radius:10px;padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-wizard:hover{opacity:.88}
+.btn-libre{flex:1;min-width:150px;background:var(--s2);border:1.5px solid var(--bd2);color:var(--t1);border-radius:10px;padding:13px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-libre:hover{border-color:var(--acc)}
+.norm-badges{display:flex;gap:7px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+.norm-badge{font-size:10px;color:var(--t3);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:3px 9px}
+
+/* Free mode */
+#free-mode{flex:1;display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+@media(max-width:800px){#free-mode{grid-template-columns:1fr;overflow:visible}}
+.free-sidebar{border-right:1px solid var(--bd);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;background:var(--s1)}
+.free-results{padding:18px;overflow-y:auto;background:var(--bg)}
+.toggle-row{display:flex;gap:7px}
+.toggle-btn{flex:1;padding:7px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--t2);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.toggle-btn.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.tag-iso{font-size:10px;background:var(--acc-d);color:var(--acc);border:1px solid rgba(50,114,232,.25);border-radius:4px;padding:1px 5px;font-family:monospace}
+.divider{height:1px;background:var(--bd);margin:3px 0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-logo">ISO 5167</div>
+  <div><div class="hdr-title">Placa de Orifício</div><div class="hdr-sub">Pressão Diferencial — Vazão</div></div>
+  <div class="hdr-norm">ISO 5167-2:2022 · AGA-3</div>
+  <button class="btn-free" onclick="showFree()">⚡ Modo Livre</button>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+
+<!-- WIZARD -->
+<div id="wizard">
+
+  <!-- S0: Welcome -->
+  <div class="welcome-wrap" id="s0">
+    <div class="welcome-logo">🔧</div>
+    <div class="welcome-title">ISO 5167-2</div>
+    <div class="welcome-sub">Calculadora de placa de orifício por pressão diferencial.<br>
+      O <strong>Guia</strong> conduz pelas perguntas da norma, passo a passo.<br>
+      O <strong>Modo Livre</strong> abre o formulário completo direto.</div>
+    <div class="welcome-actions">
+      <button class="btn-wizard" onclick="startWizard()">▶ Iniciar Guia</button>
+      <button class="btn-libre" onclick="showFree()">⚡ Modo Livre</button>
+    </div>
+    <div class="norm-badges">
+      <span class="norm-badge">ISO 5167-2:2022</span>
+      <span class="norm-badge">Reader-Harris/Gallagher</span>
+      <span class="norm-badge">Flange · Corner · D&amp;D/2</span>
+      <span class="norm-badge">Incerteza Anexo B</span>
+    </div>
+  </div>
+
+  <!-- S1: Mode -->
+  <div class="step-wrap hidden" id="s1">
+    <div class="step-label">Passo 1 de 6</div>
+    <div class="step-title">O que deseja calcular?</div>
+    <div class="step-desc">Selecione o sentido do cálculo conforme o dado disponível.</div>
+    <div class="choices">
+      <div class="choice-card" id="c-QdP" onclick="pick('mode','Q_dP','c-QdP')">
+        <div class="icon">↓</div><div>
+        <div class="lbl">ΔP a partir da Vazão</div>
+        <div class="note">Tenho a vazão esperada e quero verificar se o ΔP gerado fica dentro da faixa do transmissor.</div>
+        <div class="ref">ISO 5167-2 §5.1 — Equação de vazão mássica</div></div>
+        <div class="chk">✓</div>
+      </div>
+      <div class="choice-card" id="c-dPQ" onclick="pick('mode','dP_Q','c-dPQ')">
+        <div class="icon">↑</div><div>
+        <div class="lbl">Vazão a partir do ΔP</div>
+        <div class="note">Conheço o ΔP medido ou o fundo de escala e quero determinar a vazão correspondente.</div>
+        <div class="ref">ISO 5167-2 §5.1 — ΔP → q_m iterativo</div></div>
+        <div class="chk">✓</div>
+      </div>
+      <div class="choice-card" id="c-OPT" onclick="pick('mode','optimal','c-OPT')">
+        <div class="icon">★</div><div>
+        <div class="lbl">Seleção de Placa Ótima</div>
+        <div class="note">Quero varrer as opções de β e encontrar o diâmetro que posiciona o ΔP no centro da escala (50%).</div>
+        <div class="ref">ISO 5167-2 §5.1.1 — 0.10 ≤ β ≤ 0.75</div></div>
+        <div class="chk">✓</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(0)">← Voltar</button>
+      <button class="btn-next" id="n1" onclick="goStep(2)" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <!-- S2: Fluid -->
+  <div class="step-wrap hidden" id="s2">
+    <div class="step-label">Passo 2 de 6</div>
+    <div class="step-title">Qual é o fluido?</div>
+    <div class="step-desc">Fluidos compressíveis exigem o fator de expansão Y (ISO 5167-2 §7.1.3).</div>
+    <div class="choices">
+      <div class="choice-card" id="c-gas" onclick="pick('fluid','gas','c-gas')">
+        <div class="icon">⛽</div><div>
+        <div class="lbl">Gás (compressível)</div>
+        <div class="note">Gás natural, CO₂, vapor, ar, etc. Usa fator de expansão Y e compressibilidade real Z.</div>
+        <div class="ref">ISO 5167-2 §7.1.3 — Y = 1 − (0.351 + 0.256β⁴ + 0.93β⁸)(1 − τ^(1/κ))</div></div>
+        <div class="chk">✓</div>
+      </div>
+      <div class="choice-card" id="c-liq" onclick="pick('fluid','liquid','c-liq')">
+        <div class="icon">💧</div><div>
+        <div class="lbl">Líquido (incompressível)</div>
+        <div class="note">Óleo, água, condensado, etc. Fator de expansão Y = 1,0.</div>
+        <div class="ref">ISO 5167-2 §7.1.3 — Y = 1.0 para líquidos</div></div>
+        <div class="chk">✓</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(1)">← Voltar</button>
+      <button class="btn-next" id="n2" onclick="goStep(3)" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <!-- S3: Tap -->
+  <div class="step-wrap hidden" id="s3">
+    <div class="step-label">Passo 3 de 6</div>
+    <div class="step-title">Tipo de tomada de pressão</div>
+    <div class="step-desc">Define L₁ e L₂' na equação RHG para Cd.</div>
+    <div class="choices">
+      <div class="choice-card" id="c-flange" onclick="pick('tap','flange','c-flange')">
+        <div class="icon">🔩</div><div>
+        <div class="lbl">Flange Taps <span class="tag-iso">mais comum</span></div>
+        <div class="note">Tomadas nas flanges, a 25,4 mm da face da placa. Aplicação mais difundida na indústria de O&amp;G.</div>
+        <div class="ref">ISO 5167-2 §5.1.4.1 — L₁ = L₂' = 25.4/D</div></div>
+        <div class="chk">✓</div>
+      </div>
+      <div class="choice-card" id="c-corner" onclick="pick('tap','corner','c-corner')">
+        <div class="icon">◧</div><div>
+        <div class="lbl">Corner Taps</div>
+        <div class="note">Tomadas anulares na face da placa (L₁ = L₂' = 0). Precisão elevada para β pequeno.</div>
+        <div class="ref">ISO 5167-2 §5.1.4.2 — L₁ = L₂' = 0</div></div>
+        <div class="chk">✓</div>
+      </div>
+      <div class="choice-card" id="c-DandD2" onclick="pick('tap','DandD2','c-DandD2')">
+        <div class="icon">📏</div><div>
+        <div class="lbl">D e D/2 (Radius Taps)</div>
+        <div class="note">Tomada a montante = D, a jusante = D/2 a partir da placa.</div>
+        <div class="ref">ISO 5167-2 §5.1.4.3 — L₁ = 1.0 · L₂' = 0.47</div></div>
+        <div class="chk">✓</div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(2)">← Voltar</button>
+      <button class="btn-next" id="n3" onclick="goStep(4)" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <!-- S4: Geometry -->
+  <div class="step-wrap hidden" id="s4">
+    <div class="step-label">Passo 4 de 6</div>
+    <div class="step-title">Tubulação e Placa</div>
+    <div class="step-desc">Diâmetros internos a 20 °C. Use presets ou insira manualmente.</div>
+    <div class="presets" id="plate-presets">
+      <button class="preset-btn" onclick="loadPreset(102.26,21.10,'p17')">PPT-17<span class="preset-sub">d = 21.10 mm</span></button>
+      <button class="preset-btn" onclick="loadPreset(102.26,30.73,'p50')">PPT-50<span class="preset-sub">d = 30.73 mm</span></button>
+      <button class="preset-btn" onclick="loadPreset(102.26,41.33,'p51')">PPT-51<span class="preset-sub">d = 41.33 mm</span></button>
+      <button class="preset-btn" onclick="loadPreset(null,null,'custom')">Personalizado</button>
+    </div>
+    <div class="sec-card">
+      <div class="form-grid">
+        <div class="field">
+          <label>D — Diâmetro Interno da Tubulação</label>
+          <div class="field-row"><input type="number" id="w-D" value="102.26" step="0.01" min="10" oninput="updateBeta()"><span class="unit-tag">mm</span></div>
+          <span class="hint">Válido: 50–1000 mm  (ISO 5167-2 §5.1.1)</span>
+        </div>
+        <div class="field">
+          <label>d — Diâmetro do Orifício</label>
+          <div class="field-row"><input type="number" id="w-d" value="30.73" step="0.01" min="1" oninput="updateBeta()"><span class="unit-tag">mm</span></div>
+          <span class="hint">Ou insira β abaixo para calcular d</span>
+        </div>
+        <div class="field">
+          <label>β — Inserir diretamente (opcional)</label>
+          <input type="number" id="w-beta-in" value="" step="0.001" min="0.10" max="0.75" placeholder="ex: 0.400" oninput="betaToD()">
+          <span class="hint">0.10 ≤ β ≤ 0.75</span>
+        </div>
+        <div class="field">
+          <label>T ref. (informativo)</label>
+          <div class="field-row"><input type="number" id="w-tref" value="20" step="1"><span class="unit-tag">°C</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="beta-display" id="beta-disp">
+      <div class="bkv"><div class="k">β (d/D)</div><div class="v" id="bd-beta">—</div></div>
+      <div class="bkv"><div class="k">Status</div><div class="v" id="bd-stat">—</div></div>
+      <div class="bkv"><div class="k">Ev</div><div class="v" id="bd-ev">—</div></div>
+      <div class="bkv"><div class="k">A_or (mm²)</div><div class="v" id="bd-area">—</div></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(3)">← Voltar</button>
+      <button class="btn-next" onclick="goStep(5)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- S5: Conditions -->
+  <div class="step-wrap hidden" id="s5">
+    <div class="step-label">Passo 5 de 6</div>
+    <div class="step-title">Condições Operacionais</div>
+    <div class="step-desc" id="s5-desc">Condições de processo na tomada P₁ (montante).</div>
+    <!-- Gas -->
+    <div id="cond-gas">
+      <div class="sec-card">
+        <div class="sec-head"><span class="dot" style="background:var(--acc)"></span>Processo</div>
+        <div class="form-grid">
+          <div class="field"><label>P₁ — Pressão Absoluta Montante</label>
+            <div class="field-row"><input type="number" id="w-P1" value="3000" step="10"><span class="unit-tag">kPa abs</span></div></div>
+          <div class="field"><label>T₁ — Temperatura</label>
+            <div class="field-row"><input type="number" id="w-T1" value="40" step="1"><span class="unit-tag">°C</span></div></div>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-head"><span class="dot" style="background:var(--purple)"></span>Propriedades do Gás</div>
+        <div class="form-grid g3">
+          <div class="field"><label>γ (grav. esp. / ar)</label>
+            <input type="number" id="w-gamma" value="0.65" step="0.01"><span class="hint">ar = 1.0</span></div>
+          <div class="field"><label>Z (compressibilidade)</label>
+            <input type="number" id="w-Z" value="0.88" step="0.01"><span class="hint">condições de operação</span></div>
+          <div class="field"><label>κ (exp. isentrópico)</label>
+            <input type="number" id="w-kappa" value="1.27" step="0.01"><span class="hint">≈ 1.27 gás natural</span></div>
+          <div class="field"><label>μ — Viscosidade</label>
+            <div class="field-row"><input type="number" id="w-mu" value="0.012" step="0.001"><span class="unit-tag">cP</span></div></div>
+        </div>
+      </div>
+      <div class="sec-card" id="card-Qg">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>Vazão de Gás</div>
+        <div class="form-grid g1">
+          <div class="field"><label>Qg</label>
+            <div class="field-row"><input type="number" id="w-Qg" value="50000" step="1000"><span class="unit-tag">Sm³/d</span></div>
+            <span class="hint">Condições padrão: 20 °C · 101,325 kPa · Z=1</span></div>
+        </div>
+      </div>
+      <div class="sec-card hidden" id="card-dPg">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>ΔP Conhecido</div>
+        <div class="field"><label>ΔP</label>
+          <div class="field-row"><input type="number" id="w-dP-gas" value="12.5" step="0.5"><span class="unit-tag">kPa</span></div></div>
+      </div>
+    </div>
+    <!-- Liquid -->
+    <div id="cond-liq" class="hidden">
+      <div class="sec-card">
+        <div class="sec-head"><span class="dot" style="background:var(--acc)"></span>Propriedades do Líquido</div>
+        <div class="form-grid">
+          <div class="field"><label>ρ — Densidade</label>
+            <div class="field-row"><input type="number" id="w-rho" value="850" step="1"><span class="unit-tag">kg/m³</span></div></div>
+          <div class="field"><label>μ — Viscosidade</label>
+            <div class="field-row"><input type="number" id="w-mu-liq" value="2.5" step="0.1"><span class="unit-tag">cP</span></div></div>
+        </div>
+      </div>
+      <div class="sec-card" id="card-Ql">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>Vazão de Líquido</div>
+        <div class="field"><label>Ql</label>
+          <div class="field-row"><input type="number" id="w-Ql" value="30" step="1"><span class="unit-tag">m³/h</span></div></div>
+      </div>
+      <div class="sec-card hidden" id="card-dPl">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>ΔP Conhecido</div>
+        <div class="field"><label>ΔP</label>
+          <div class="field-row"><input type="number" id="w-dP-liq" value="12.5" step="0.5"><span class="unit-tag">kPa</span></div></div>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(4)">← Voltar</button>
+      <button class="btn-next" onclick="goStep(6)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- S6: Instrument -->
+  <div class="step-wrap hidden" id="s6">
+    <div class="step-label">Passo 6 de 6</div>
+    <div class="step-title">Transmissor de ΔP</div>
+    <div class="step-desc">Configure a faixa e incerteza do instrumento instalado.</div>
+    <div class="sec-card">
+      <div class="sec-head"><span class="dot" style="background:var(--amber)"></span>Faixa do Transmissor</div>
+      <div class="form-grid">
+        <div class="field"><label>URV — Fundo de Escala</label>
+          <div class="field-row"><input type="number" id="w-urv" value="25" step="5" min="1"><span class="unit-tag">kPa</span></div></div>
+        <div class="field"><label>LRV — Zero</label>
+          <div class="field-row"><input type="number" id="w-lrv" value="0" step="1" min="0"><span class="unit-tag">kPa</span></div></div>
+        <div class="field"><label>Incerteza do Transmissor</label>
+          <div class="field-row"><input type="number" id="w-unc-dp" value="0.1" step="0.05"><span class="unit-tag">%FS</span></div>
+          <span class="hint">Típico: 0.065–0.1 %FS</span></div>
+        <div class="field"><label>Incerteza do Diâmetro δd</label>
+          <div class="field-row"><input type="number" id="w-unc-d" value="0.05" step="0.01"><span class="unit-tag">mm</span></div>
+          <span class="hint">Tolerância de fabricação</span></div>
+      </div>
+    </div>
+    <div class="sec-card">
+      <div class="sec-head"><span class="dot" style="background:var(--t3)"></span>Limites de operação — ISO 5167-2</div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.9">
+        ✅ Faixa ideal do ΔP: <strong>20–80 %</strong> da escala do transmissor<br>
+        ⚠  Aceitável: <strong>10–90 %</strong><br>
+        ✅ β ideal: <strong>0,30–0,65</strong>  · Norma: <strong>0,10–0,75</strong><br>
+        ✅ Re_D mínimo: depende de β e tipo de tap (ISO 5167-2 Tabela 1)
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goStep(5)">← Voltar</button>
+      <button class="btn-calc" onclick="runCalc()">▶ Calcular</button>
+    </div>
+  </div>
+
+</div><!-- /wizard -->
+
+<!-- RESULTS -->
+<div id="results" class="hidden"></div>
+
+<!-- FREE MODE -->
+<div id="free-mode" class="hidden">
+  <div class="free-sidebar">
+    <div class="sec-card" style="margin-bottom:0">
+      <div class="sec-head"><span class="dot" style="background:var(--acc)"></span>Fluido</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="fb-gas" onclick="setFreeFluid('gas')">⛽ Gás</button>
+        <button class="toggle-btn" id="fb-liq" onclick="setFreeFluid('liquid')">💧 Líquido</button>
+      </div>
+    </div>
+    <div class="sec-card" style="margin-bottom:0">
+      <div class="sec-head"><span class="dot" style="background:var(--purple)"></span>Placa &amp; Tubulação</div>
+      <div class="presets">
+        <button class="preset-btn" onclick="freePreset(102.26,21.10,'fp17')">PPT-17<span class="preset-sub">21.10 mm</span></button>
+        <button class="preset-btn" onclick="freePreset(102.26,30.73,'fp50')">PPT-50<span class="preset-sub">30.73 mm</span></button>
+        <button class="preset-btn" onclick="freePreset(102.26,41.33,'fp51')">PPT-51<span class="preset-sub">41.33 mm</span></button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>D (mm)</label><input type="number" id="f-D" value="102.26" step="0.01" oninput="freeUpdateBeta()"></div>
+        <div class="field"><label>d (mm)</label><input type="number" id="f-d" value="30.73" step="0.01" oninput="freeUpdateBeta()"></div>
+        <div class="field"><label>β</label><input type="text" id="f-beta" value="0.3006" readonly></div>
+        <div class="field"><label>Tap</label>
+          <select id="f-tap">
+            <option value="flange">Flange taps</option>
+            <option value="corner">Corner taps</option>
+            <option value="DandD2">D e D/2</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="sec-card" style="margin-bottom:0">
+      <div class="sec-head"><span class="dot" style="background:var(--green)"></span>Modo de Cálculo</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="fm-QdP" onclick="setFreeMode('Q_dP')">Q → ΔP</button>
+        <button class="toggle-btn" id="fm-dPQ" onclick="setFreeMode('dP_Q')">ΔP → Q</button>
+        <button class="toggle-btn" id="fm-OPT" onclick="setFreeMode('optimal')">Ótimo</button>
+      </div>
+    </div>
+    <!-- gas cond -->
+    <div id="fg-gas">
+      <div class="sec-card" style="margin-bottom:0">
+        <div class="sec-head"><span class="dot" style="background:var(--acc)"></span>Processo</div>
+        <div class="form-grid">
+          <div class="field"><label>P₁ (kPa abs)</label><input type="number" id="f-P1" value="3000" step="10"></div>
+          <div class="field"><label>T₁ (°C)</label><input type="number" id="f-T1" value="40"></div>
+          <div class="field"><label>γ</label><input type="number" id="f-gamma" value="0.65" step="0.01"></div>
+          <div class="field"><label>Z</label><input type="number" id="f-Z" value="0.88" step="0.01"></div>
+          <div class="field"><label>κ</label><input type="number" id="f-kappa" value="1.27" step="0.01"></div>
+          <div class="field"><label>μ (cP)</label><input type="number" id="f-mu" value="0.012" step="0.001"></div>
+        </div>
+      </div>
+      <div class="sec-card" id="fg-Qg" style="margin-bottom:0">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>Vazão</div>
+        <div class="field"><label>Qg (Sm³/d)</label><input type="number" id="f-Qg" value="50000" step="1000"></div>
+      </div>
+      <div class="sec-card hidden" id="fg-dPg" style="margin-bottom:0">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>ΔP Conhecido</div>
+        <div class="field"><label>ΔP (kPa)</label><input type="number" id="f-dPg" value="12.5" step="0.5"></div>
+      </div>
+    </div>
+    <!-- liq cond -->
+    <div id="fg-liq" class="hidden">
+      <div class="sec-card" style="margin-bottom:0">
+        <div class="sec-head"><span class="dot" style="background:var(--acc)"></span>Propriedades</div>
+        <div class="form-grid">
+          <div class="field"><label>ρ (kg/m³)</label><input type="number" id="f-rho" value="850"></div>
+          <div class="field"><label>μ (cP)</label><input type="number" id="f-mu-liq" value="2.5" step="0.1"></div>
+        </div>
+      </div>
+      <div class="sec-card" id="fg-Ql" style="margin-bottom:0">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>Vazão</div>
+        <div class="field"><label>Ql (m³/h)</label><input type="number" id="f-Ql" value="30"></div>
+      </div>
+      <div class="sec-card hidden" id="fg-dPl" style="margin-bottom:0">
+        <div class="sec-head"><span class="dot" style="background:var(--green)"></span>ΔP Conhecido</div>
+        <div class="field"><label>ΔP (kPa)</label><input type="number" id="f-dPl" value="12.5" step="0.5"></div>
+      </div>
+    </div>
+    <!-- instrument -->
+    <div class="sec-card" style="margin-bottom:0">
+      <div class="sec-head"><span class="dot" style="background:var(--amber)"></span>Transmissor ΔP</div>
+      <div class="form-grid">
+        <div class="field"><label>URV (kPa)</label><input type="number" id="f-urv" value="25" step="5"></div>
+        <div class="field"><label>LRV (kPa)</label><input type="number" id="f-lrv" value="0"></div>
+        <div class="field"><label>Incerteza (%FS)</label><input type="number" id="f-unc-dp" value="0.1" step="0.05"></div>
+        <div class="field"><label>δd (mm)</label><input type="number" id="f-unc-d" value="0.05" step="0.01"></div>
+      </div>
+    </div>
+    <button class="btn-calc" onclick="runFreeCalc()">▶ Calcular</button>
+    <button class="btn-back" onclick="showWizard()" style="text-align:center">← Voltar ao Guia</button>
+  </div>
+  <div class="free-results" id="free-results">
+    <div style="text-align:center;padding:60px 20px;color:var(--t3)">
+      <div style="font-size:36px;margin-bottom:12px">📐</div>
+      <div style="font-size:13px">Preencha os parâmetros e clique em <strong>Calcular</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// ISO 5167-2 ENGINE
+// ═══════════════════════════════════════════════════
+const R=8314.46,MAIR=28.9647,TSTD=293.15,PSTD=101325;
+
+function tapL(tap,D){
+  if(tap==='corner') return [0,0];
+  if(tap==='DandD2') return [1.0,0.47];
+  return [25.4/D,25.4/D]; // flange default
+}
+function Cd_RHG(b,Re,D,tap='flange'){
+  Re=Math.max(Re,10);
+  const[L1,L2p]=tapL(tap,D);
+  const A=(19000*b/Re)**0.8;
+  const M2p=L2p>0?2*L2p/(1-b):0;
+  let C=0.5961+0.0261*b**2-0.216*b**8
+    +0.000521*(1e6*b/Re)**0.7
+    +(0.0188+0.0063*A)*b**3.5*(1e6/Re)**0.3
+    +(0.043+0.080*Math.exp(-10*L1)-0.123*Math.exp(-7*L1))*(1-0.11*A)*b**4/(1-b**4);
+  if(M2p>0) C-=0.031*(M2p-0.8*M2p**1.1)*b**1.3;
+  if(D<71.12) C+=0.011*(0.75-b)*(2.8-D/25.4);
+  return C;
+}
+function Yf(b,dP,P1,k){
+  if(!dP||!P1) return 1;
+  const tau=dP/P1; if(tau>=1) return 0.5;
+  return 1-(0.351+0.256*b**4+0.93*b**8)*(1-(1-tau)**(1/k));
+}
+const Ev=b=>1/Math.sqrt(1-b**4);
+const ReD=(qm,D,mu)=>4*qm/(Math.PI*D*mu);
+const gasDens=(P,T,g,Z)=>P*g*MAIR/(Z*R*T);
+const rhoStd=g=>PSTD*g*MAIR/(R*TSTD);
+
+function Q2dP(qm,D,d,rho,mu,isG,P1,k,tap){
+  const b=d/D,Ad=Math.PI/4*d*d,ev=Ev(b),mu_=mu*1e-3;
+  let C=0.606,Y=1,dP=0;
+  for(let i=0;i<30;i++){const p=dP;
+    dP=(qm/(C*ev*Y*Ad))**2/(2*rho);
+    C=Cd_RHG(b,ReD(qm,D,mu_),D*1e3,tap);
+    if(isG)Y=Yf(b,dP,P1,k);
+    if(Math.abs(dP-p)<1e-7)break;}
+  return{dP_Pa:dP,C,Y,Ev:ev,ReD:ReD(qm,D,mu_),b};
+}
+function dP2Q(dP,D,d,rho,mu,isG,P1,k,tap){
+  const b=d/D,Ad=Math.PI/4*d*d,ev=Ev(b),mu_=mu*1e-3;
+  let C=0.606,Y=1,qm=0;
+  for(let i=0;i<40;i++){const pc=C,py=Y;
+    if(isG)Y=Yf(b,dP,P1,k);
+    qm=C*ev*Y*Ad*Math.sqrt(2*dP*rho);
+    C=Cd_RHG(b,ReD(qm,D,mu_),D*1e3,tap);
+    if(Math.abs(C-pc)<1e-8&&Math.abs(Y-py)<1e-8)break;}
+  return{qm_kgs:qm,C,Y,Ev:ev,ReD:ReD(qm,D,mu_),b};
+}
+function uncertainty(b,Cd,Y,dP,P1,isG,dUnc,dMm,dpUncPct,dpSpan){
+  const uCd=b<=.2?.007:b<=.6?.005:b<=.75?b/60:.013;
+  const uEv=b**4/(1-b**4)*.001;
+  const uY=isG&&P1?Math.abs(4*dP/(P1*1.27)*.01):0;
+  const ud=2*(dUnc/dMm);
+  const udp=dP>0?.5*(dpUncPct/100*dpSpan/dP):.01;
+  return{tot:Math.sqrt(uCd**2+uEv**2+uY**2+ud**2+udp**2)*100,uCd:uCd*100,uEv:uEv*100,uY:uY*100,ud:ud*100,udp:udp*100};
+}
+function reMin(b,tap){
+  if(tap==='flange') return b<=.6?5000:10000;
+  if(tap==='corner') return b<=.56?5000:Math.round(16000*b**2);
+  return b<=.56?10000:Math.round(16000*b**2);
+}
+
+// ═══════════════════════════════════════════════════
+// WIZARD STATE
+// ═══════════════════════════════════════════════════
+const W={step:0,mode:null,fluid:null,tap:null};
+const STEPS_TOTAL=6;
+
+function goStep(n){
+  document.querySelectorAll('#wizard>div').forEach(el=>el.classList.add('hidden'));
+  const el=document.getElementById('s'+n); if(el)el.classList.remove('hidden');
+  W.step=n;
+  document.getElementById('prog').style.width=(n===0?0:Math.min(100,Math.round(n/STEPS_TOTAL*100)))+'%';
+  document.getElementById('wizard').scrollTop=0;
+  if(n===5)updateStep5();
+}
+function startWizard(){document.getElementById('s0').classList.add('hidden');goStep(1);}
+function showWizard(){
+  document.getElementById('wizard').classList.remove('hidden');
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('free-mode').classList.add('hidden');
+  goStep(W.step||0);
+}
+function showFree(){
+  document.getElementById('wizard').classList.add('hidden');
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('free-mode').classList.remove('hidden');
+  document.getElementById('prog').style.width='100%';
+  freeUpdateBeta();
+}
+
+const GROUPS={mode:['c-QdP','c-dPQ','c-OPT'],fluid:['c-gas','c-liq'],tap:['c-flange','c-corner','c-DandD2']};
+const NEXT_BTN={mode:'n1',fluid:'n2',tap:'n3'};
+
+function pick(key,val,cardId){
+  W[key]=val;
+  GROUPS[key].forEach(id=>{const c=document.getElementById(id);if(c){c.classList.remove('selected');c.querySelector('.chk').textContent=''}});
+  const card=document.getElementById(cardId);
+  if(card){card.classList.add('selected');card.querySelector('.chk').textContent='✓';}
+  const nb=document.getElementById(NEXT_BTN[key]);
+  if(nb)nb.removeAttribute('disabled');
+}
+
+function updateStep5(){
+  const isG=W.fluid==='gas', isDPQ=W.mode==='dP_Q';
+  document.getElementById('cond-gas').classList.toggle('hidden',!isG);
+  document.getElementById('cond-liq').classList.toggle('hidden',isG);
+  if(isG){document.getElementById('card-Qg').classList.toggle('hidden',isDPQ);document.getElementById('card-dPg').classList.toggle('hidden',!isDPQ);}
+  else{document.getElementById('card-Ql').classList.toggle('hidden',isDPQ);document.getElementById('card-dPl').classList.toggle('hidden',!isDPQ);}
+}
+
+function updateBeta(){
+  const D=parseFloat(document.getElementById('w-D').value)||0;
+  const d=parseFloat(document.getElementById('w-d').value)||0;
+  if(!D||!d||d>=D)return;
+  const b=d/D,ev=Ev(b),Ad=Math.PI/4*(d/1e3)**2*1e6;
+  document.getElementById('bd-beta').textContent=b.toFixed(4);
+  const cls=b>=.3&&b<=.65?'ok':b>=.1&&b<=.75?'warn':'bad';
+  document.getElementById('bd-beta').className='v '+cls;
+  document.getElementById('bd-stat').className='v '+cls;
+  document.getElementById('bd-stat').textContent=b>=.3&&b<=.65?'Ideal ✓':b>=.1&&b<=.75?'Aceitável ⚠':'Fora da norma ✗';
+  document.getElementById('bd-ev').textContent=ev.toFixed(4);
+  document.getElementById('bd-area').textContent=Ad.toFixed(2);
+  document.getElementById('w-beta-in').value='';
+}
+function betaToD(){
+  const b=parseFloat(document.getElementById('w-beta-in').value);
+  const D=parseFloat(document.getElementById('w-D').value)||102.26;
+  if(!b||b<.05||b>.95)return;
+  document.getElementById('w-d').value=(b*D).toFixed(2);updateBeta();
+}
+function loadPreset(D,d,pid){
+  document.querySelectorAll('#plate-presets .preset-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector('#plate-presets .preset-btn[onclick*="\''+pid+'\'"]');
+  if(btn)btn.classList.add('active');
+  if(D)document.getElementById('w-D').value=D;
+  if(d)document.getElementById('w-d').value=d;
+  updateBeta();
+}
+
+// ═══════════════════════════════════════════════════
+// COMPUTE
+// ═══════════════════════════════════════════════════
+function compute(cfg){
+  const{D,d,isGas,tap,urv,lrv,unc_dp,unc_d}=cfg;
+  const dpSpan=(urv-lrv)*1000;
+  const Dm=D/1e3,dm=d/1e3;
+  let P1=0,T1K=0,rho1=0,mu_cP=0,kappa=1.27;
+  if(isGas){P1=cfg.P1_kPa*1000;T1K=cfg.T1_C+273.15;rho1=gasDens(P1,T1K,cfg.gamma,cfg.Z);mu_cP=cfg.mu_cP;kappa=cfg.kappa;}
+  else{rho1=cfg.rho;mu_cP=cfg.mu_cP;}
+  const mu=mu_cP*1e-3;
+
+  let res,qm,dP;
+  if(cfg.mode==='dP_Q'){
+    dP=cfg.dP_kPa*1000;
+    res=dP2Q(dP,Dm,dm,rho1,mu_cP,isGas,P1,kappa,tap);
+    qm=res.qm_kgs;
+  } else {
+    if(isGas){qm=cfg.Q_sm3d*rhoStd(cfg.gamma)/86400;}
+    else{qm=rho1*cfg.Q_m3h/3600;}
+    res=Q2dP(qm,Dm,dm,rho1,mu_cP,isGas,P1,kappa,tap);
+    dP=res.dP_Pa;
+  }
+
+  const b=res.b,Cd=res.C,Y=res.Y,re=res.ReD;
+  const pct=(dP-lrv*1000)/dpSpan*100;
+
+  const r100=dP2Q(dpSpan,Dm,dm,rho1,mu_cP,isGas,P1,kappa,tap);
+  const r20 =dP2Q(dpSpan*.2,Dm,dm,rho1,mu_cP,isGas,P1,kappa,tap);
+  let Qop,Q100,Q20,Qu;
+  if(isGas){const k=86400/rhoStd(cfg.gamma);Qop=qm*k;Q100=r100.qm_kgs*k;Q20=r20.qm_kgs*k;Qu='Sm³/d';}
+  else{const k=3600/rho1;Qop=qm*k;Q100=r100.qm_kgs*k;Q20=r20.qm_kgs*k;Qu='m³/h';}
+
+  const unc=uncertainty(b,Cd,Y,dP,P1,isGas,unc_d,d,unc_dp,dpSpan);
+  const dp_ok=pct>=20&&pct<=80,dp_warn=!dp_ok&&pct>=10&&pct<=90;
+  const b_ideal=b>=.3&&b<=.65,b_ok=b>=.1&&b<=.75;
+  const rmin=reMin(b,tap),re_ok=re>=rmin,re_ideal=re>=20000;
+  const Y_ok=!isGas||Y>=.9,dpr_ok=!isGas||(dP/P1)<=.25;
+  const states=[];
+  if(!dp_ok&&!dp_warn)states.push('bad');else if(!dp_ok)states.push('warn');
+  if(!b_ok)states.push('bad');else if(!b_ideal)states.push('warn');
+  if(!re_ok)states.push('bad');else if(!re_ideal)states.push('warn');
+  if(!Y_ok)states.push('warn');
+  const global=states.includes('bad')?'nogo':states.includes('warn')?'warn':'go';
+
+  // β sweep
+  const sweep=[];
+  for(let bv=0.10;bv<=0.76;bv+=0.025){
+    const dv=bv*D; if(dv<5||dv>D-5)continue;
+    const sr=Q2dP(qm,Dm,dv/1e3,rho1,mu_cP,isGas,P1,kappa,tap);
+    const p=(sr.dP_Pa-lrv*1000)/dpSpan*100;
+    sweep.push({b:bv,d:dv,dP_kPa:sr.dP_Pa/1e3,p,re:sr.ReD,Cd:sr.C,ok:p>=20&&p<=80&&bv>=.1&&bv<=.75});
+  }
+
+  return{b,Cd,Y,Ev:res.Ev,ReD:re,rho1,D,d,dP_Pa:dP,dP_kPa:dP/1e3,pct,Qop,Q100,Q20,Qu,turndown:Q100/Q20,
+    unc,global,isGas,dp_ok,dp_warn,b_ok,b_ideal,re_ok,re_ideal,Y_ok,dpr_ok,rmin,urv,lrv,dpSpan:dpSpan/1e3,
+    sweep,P1_Pa:P1,cfg};
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+const fmt=(n,d)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtSI=n=>n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':n.toFixed(0);
+const sc=(ok,w)=>ok?'ok':w?'warn':'bad';
+const si=(ok,w)=>ok?'✓':w?'⚠':'✗';
+
+function renderResults(r,targetId){
+  const barPct=Math.min(100,Math.max(0,r.pct));
+  const barClr=r.dp_ok?'var(--green)':r.dp_warn?'var(--amber)':'var(--red)';
+
+  const vt=r.global==='go'?'✓  PLACA APROVADA':r.global==='warn'?'⚠  VERIFICAR CRITÉRIOS':'✗  PLACA REPROVADA';
+  const vs=r.global==='go'?'ΔP na faixa ideal · β e Re_D conformes · ISO 5167-2':
+           r.global==='warn'?'Um ou mais critérios fora da faixa ideal — revise os parâmetros':
+           'ΔP fora da faixa ou parâmetro fora dos limites da norma';
+
+  const crits=[
+    {n:'ΔP na escala do transmissor',ref:'Ideal: 20–80 %',v:`${fmt(r.dP_kPa,2)} kPa = ${fmt(r.pct,1)} %`,ok:r.dp_ok,w:r.dp_warn},
+    {n:'Beta ratio β  (ISO 5167-2 §5.1.1)',ref:'0.10–0.75 · Ideal 0.30–0.65',v:`β = ${r.b.toFixed(4)}`,ok:r.b_ideal,w:r.b_ok&&!r.b_ideal},
+    {n:`Reynolds Re_D  (mín ${fmtSI(r.rmin)})`,ref:'Ideal ≥ 20 000',v:`Re = ${fmtSI(r.ReD)}`,ok:r.re_ideal,w:r.re_ok&&!r.re_ideal},
+    r.isGas&&{n:'Razão ΔP/P₁  (validade de Y)',ref:'≤ 25 %  (ISO 5167-2 Eq. 7)',v:`${fmt(r.dP_Pa/r.P1_Pa*100,2)} %`,ok:r.dpr_ok,w:!r.dpr_ok},
+    r.isGas&&{n:'Fator de Expansão Y',ref:'Deve ser ≥ 0.90',v:`Y = ${r.Y.toFixed(5)}`,ok:r.Y_ok,w:!r.Y_ok},
+    {n:'Coeficiente de Descarga Cd  (RHG)',ref:'Típico: 0.595–0.625',v:`Cd = ${r.Cd.toFixed(5)}`,info:true},
+    {n:'Velocidade de Aproximação Ev',ref:'1/√(1−β⁴)',v:`Ev = ${r.Ev.toFixed(5)}`,info:true},
+  ].filter(Boolean);
+
+  const critHtml=crits.map(c=>{const s=c.info?'info':sc(c.ok,c.w);
+    return`<div class="crit ${s}"><div class="crit-bar"></div>
+    <div class="crit-icon">${c.info?'ℹ':si(c.ok,c.w)}</div>
+    <div style="flex:1"><div class="crit-name">${c.n}</div><div class="crit-label">${c.ref}</div></div>
+    <div class="crit-val">${c.v}</div></div>`;}).join('');
+
+  const sweepRows=r.sweep.filter((_,i)=>i%2===0).map(sw=>{
+    const cur=Math.abs(sw.d-r.d)<0.5,p=Math.min(100,Math.max(0,sw.p));
+    const clr=sw.p>=20&&sw.p<=80?'var(--green)':sw.p>=10&&sw.p<=90?'var(--amber)':'var(--red)';
+    return`<tr class="${cur?'cur':''}">
+      <td>${sw.b.toFixed(3)}</td><td>${sw.d.toFixed(1)}</td>
+      <td>${fmt(sw.dP_kPa,2)}</td>
+      <td><div class="bar-mini"><div class="bar-track"><div class="bar-fill-mini" style="width:${p}%;background:${clr}"></div></div>
+        <span style="font-size:11px;color:${clr};width:38px;text-align:right">${sw.p.toFixed(0)}%</span></div></td>
+      <td>${fmtSI(sw.re)}</td>
+      <td style="color:${sw.ok?'var(--green)':sw.p>=10&&sw.p<=90?'var(--amber)':'var(--red)'};font-weight:700">
+        ${sw.ok?'✓ GO':sw.p>=10&&sw.p<=90?'⚠ WARN':'✗ NO-GO'}</td></tr>`;
+  }).join('');
+
+  const editBtn=targetId==='results'?`<button class="btn-edit" onclick="editInputs()">✏ Editar Parâmetros</button>`:'';
+
+  document.getElementById(targetId).innerHTML=`<div class="res-wrap">
+  <div class="verdict ${r.global}">
+    <div class="verdict-icon">${r.global==='go'?'✅':r.global==='warn'?'⚠️':'❌'}</div>
+    <div><div class="verdict-title">${vt}</div><div class="verdict-sub">${vs}</div></div>
+    ${editBtn}
+  </div>
+  <div class="metrics-grid">
+    <div class="metric ${sc(r.dp_ok,r.dp_warn)}">
+      <div class="metric-label">ΔP Calculado</div>
+      <div class="metric-val">${fmt(r.dP_kPa,2)}</div>
+      <div class="metric-unit">kPa · ${fmt(r.pct,1)}% da escala</div>
+    </div>
+    <div class="metric ${sc(r.b_ideal,r.b_ok&&!r.b_ideal)}">
+      <div class="metric-label">Beta ratio β</div>
+      <div class="metric-val">${r.b.toFixed(4)}</div>
+      <div class="metric-unit">${r.b_ideal?'Faixa ideal ✓':r.b_ok?'Aceitável ⚠':'Fora da norma ✗'}</div>
+    </div>
+    <div class="metric ${sc(r.re_ideal,r.re_ok&&!r.re_ideal)}">
+      <div class="metric-label">Reynolds Re_D</div>
+      <div class="metric-val">${fmtSI(r.ReD)}</div>
+      <div class="metric-unit">${r.re_ideal?'Turbulência plena ✓':r.re_ok?'Aceitável ⚠':'Insuficiente ✗'}</div>
+    </div>
+    <div class="metric neu">
+      <div class="metric-label">Incerteza Total (k=2)</div>
+      <div class="metric-val">${fmt(r.unc.tot,2)}</div>
+      <div class="metric-unit">% · RSS ISO 5167-2 Anexo B</div>
+    </div>
+  </div>
+  <div class="gauge-wrap">
+    <div class="gauge-title">Transmissor ΔP — ${r.lrv}–${r.urv} kPa (span = ${r.dpSpan} kPa)</div>
+    <div class="gauge-track">
+      <div class="gauge-fill" style="width:${barPct}%;background:${barClr}"></div>
+      <div class="gauge-mark" style="left:20%"></div>
+      <div class="gauge-mark" style="left:80%"></div>
+      <div style="position:absolute;left:20%;right:20%;top:0;bottom:0;background:rgba(16,185,129,.06)"></div>
+      <div class="gauge-lbl">ΔP = ${fmt(r.dP_kPa,2)} kPa  (${fmt(r.pct,1)} %)</div>
+    </div>
+    <div class="gauge-marks-label"><span>${r.lrv} kPa (0%)</span><span style="color:var(--green)">◄ Zona ideal 20–80 % ►</span><span>${r.urv} kPa (100%)</span></div>
+    <div class="gauge-range">
+      <div class="gauge-kv"><div class="k">Q a 100% FS</div><div class="v">${fmt(r.Q100,r.isGas?0:1)} ${r.Qu}</div></div>
+      <div class="gauge-kv"><div class="k">Q a 20% FS</div><div class="v">${fmt(r.Q20,r.isGas?0:1)} ${r.Qu}</div></div>
+      <div class="gauge-kv"><div class="k">Vazão Operacional</div><div class="v">${fmt(r.Qop,r.isGas?0:1)} ${r.Qu}</div></div>
+      <div class="gauge-kv"><div class="k">Turndown</div><div class="v">${fmt(r.turndown,1)} : 1</div></div>
+    </div>
+  </div>
+  <div class="criteria-list">
+    <div class="crit-head"><span style="width:6px;height:6px;border-radius:50%;background:var(--acc);display:inline-block"></span>Critérios ISO 5167-2</div>
+    ${critHtml}
+  </div>
+  <div class="unc-wrap">
+    <div class="unc-head">Incerteza de Medição — ISO 5167-2 Anexo B · RSS · k=2 (~95%)</div>
+    <div class="unc-grid">
+      <div class="unc-item"><div class="unc-k">Total (k=2)</div><div class="unc-v" style="color:var(--amber)">${fmt(r.unc.tot,3)} %</div></div>
+      <div class="unc-item"><div class="unc-k">u(Cd)</div><div class="unc-v">${fmt(r.unc.uCd,3)} %</div></div>
+      <div class="unc-item"><div class="unc-k">u(d) geométrica</div><div class="unc-v">${fmt(r.unc.ud,3)} %</div></div>
+      <div class="unc-item"><div class="unc-k">u(ΔP) transmissor</div><div class="unc-v">${fmt(r.unc.udp,3)} %</div></div>
+      <div class="unc-item"><div class="unc-k">u(Y) expansão</div><div class="unc-v">${fmt(r.unc.uY,3)} %</div></div>
+      <div class="unc-item"><div class="unc-k">u(Ev)</div><div class="unc-v">${fmt(r.unc.uEv,4)} %</div></div>
+    </div>
+  </div>
+  <div class="cmp-wrap">
+    <div class="cmp-head">Varredura β — D = ${r.D} mm · Q operacional · ${r.cfg.tap} taps</div>
+    <table class="cmp-table">
+      <thead><tr><th>β</th><th>d (mm)</th><th>ΔP (kPa)</th><th style="min-width:150px">% Escala</th><th>Re_D</th><th>Status</th></tr></thead>
+      <tbody>${sweepRows}</tbody>
+    </table>
+  </div>
+  </div>`;
+}
+
+function runCalc(){
+  const cfg=collectWizard();
+  const res=compute(cfg);
+  document.getElementById('wizard').classList.add('hidden');
+  const el=document.getElementById('results');
+  el.classList.remove('hidden');
+  renderResults(res,'results');
+  document.getElementById('prog').style.width='100%';
+}
+
+function collectWizard(){
+  const isGas=W.fluid==='gas',isDPQ=W.mode==='dP_Q';
+  const D=parseFloat(document.getElementById('w-D').value);
+  const d=parseFloat(document.getElementById('w-d').value);
+  let cfg={mode:W.mode||'Q_dP',fluid:W.fluid||'gas',tap:W.tap||'flange',D,d,isGas,
+    urv:parseFloat(document.getElementById('w-urv').value),
+    lrv:parseFloat(document.getElementById('w-lrv').value),
+    unc_dp:parseFloat(document.getElementById('w-unc-dp').value),
+    unc_d:parseFloat(document.getElementById('w-unc-d').value)};
+  if(isGas){
+    cfg.P1_kPa=parseFloat(document.getElementById('w-P1').value);
+    cfg.T1_C  =parseFloat(document.getElementById('w-T1').value);
+    cfg.gamma =parseFloat(document.getElementById('w-gamma').value);
+    cfg.Z     =parseFloat(document.getElementById('w-Z').value);
+    cfg.kappa =parseFloat(document.getElementById('w-kappa').value);
+    cfg.mu_cP =parseFloat(document.getElementById('w-mu').value);
+    if(isDPQ)cfg.dP_kPa=parseFloat(document.getElementById('w-dP-gas').value);
+    else cfg.Q_sm3d=parseFloat(document.getElementById('w-Qg').value);
+  } else {
+    cfg.rho   =parseFloat(document.getElementById('w-rho').value);
+    cfg.mu_cP =parseFloat(document.getElementById('w-mu-liq').value);
+    if(isDPQ)cfg.dP_kPa=parseFloat(document.getElementById('w-dP-liq').value);
+    else cfg.Q_m3h=parseFloat(document.getElementById('w-Ql').value);
+  }
+  return cfg;
+}
+
+function editInputs(){
+  document.getElementById('results').classList.add('hidden');
+  document.getElementById('wizard').classList.remove('hidden');
+  goStep(W.step||1);
+}
+
+// ═══════════════════════════════════════════════════
+// FREE MODE
+// ═══════════════════════════════════════════════════
+let fFluid='gas',fMode='Q_dP';
+function setFreeFluid(t){fFluid=t;
+  document.getElementById('fb-gas').classList.toggle('active',t==='gas');
+  document.getElementById('fb-liq').classList.toggle('active',t!=='gas');
+  document.getElementById('fg-gas').classList.toggle('hidden',t!=='gas');
+  document.getElementById('fg-liq').classList.toggle('hidden',t==='gas');}
+function setFreeMode(m){fMode=m;
+  ['Q_dP','dP_Q','optimal'].forEach(k=>{const id='fm-'+k.replace('_','');const el=document.getElementById(id);if(el)el.classList.toggle('active',k===m);});
+  const isDPQ=m==='dP_Q';
+  document.getElementById('fg-Qg').classList.toggle('hidden',isDPQ);
+  document.getElementById('fg-dPg').classList.toggle('hidden',!isDPQ);
+  document.getElementById('fg-Ql').classList.toggle('hidden',isDPQ);
+  document.getElementById('fg-dPl').classList.toggle('hidden',!isDPQ);}
+function freePreset(D,d,pid){
+  document.querySelectorAll('.free-sidebar .preset-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector('.free-sidebar .preset-btn[onclick*="\''+pid+'\'"]');if(btn)btn.classList.add('active');
+  document.getElementById('f-D').value=D;document.getElementById('f-d').value=d;freeUpdateBeta();}
+function freeUpdateBeta(){const D=parseFloat(document.getElementById('f-D').value)||1;const d=parseFloat(document.getElementById('f-d').value)||0;document.getElementById('f-beta').value=(d/D).toFixed(4);}
+
+function runFreeCalc(){
+  const isGas=fFluid==='gas',isDPQ=fMode==='dP_Q';
+  const D=parseFloat(document.getElementById('f-D').value);
+  const d=parseFloat(document.getElementById('f-d').value);
+  const tap=document.getElementById('f-tap').value;
+  let cfg={mode:fMode,fluid:fFluid,tap,D,d,isGas,
+    urv:parseFloat(document.getElementById('f-urv').value),
+    lrv:parseFloat(document.getElementById('f-lrv').value),
+    unc_dp:parseFloat(document.getElementById('f-unc-dp').value),
+    unc_d:parseFloat(document.getElementById('f-unc-d').value)};
+  if(isGas){
+    cfg.P1_kPa=parseFloat(document.getElementById('f-P1').value);
+    cfg.T1_C  =parseFloat(document.getElementById('f-T1').value);
+    cfg.gamma =parseFloat(document.getElementById('f-gamma').value);
+    cfg.Z     =parseFloat(document.getElementById('f-Z').value);
+    cfg.kappa =parseFloat(document.getElementById('f-kappa').value);
+    cfg.mu_cP =parseFloat(document.getElementById('f-mu').value);
+    cfg.Q_sm3d=parseFloat(document.getElementById('f-Qg').value);
+    if(isDPQ)cfg.dP_kPa=parseFloat(document.getElementById('f-dPg').value);
+  } else {
+    cfg.rho   =parseFloat(document.getElementById('f-rho').value);
+    cfg.mu_cP =parseFloat(document.getElementById('f-mu-liq').value);
+    cfg.Q_m3h =parseFloat(document.getElementById('f-Ql').value);
+    if(isDPQ)cfg.dP_kPa=parseFloat(document.getElementById('f-dPl').value);
+  }
+  const res=compute(cfg);
+  const fr=document.getElementById('free-results');
+  fr.innerHTML='<div id="fr-inner"></div>';
+  // render to temp div then move
+  const tmp=document.createElement('div');tmp.id='results';tmp.className='hidden';
+  document.body.appendChild(tmp);
+  renderResults(res,'results');
+  fr.innerHTML=tmp.innerHTML;
+  // remove edit btn from free results
+  fr.querySelector('.btn-edit')?.remove();
+  document.body.removeChild(tmp);
+}
+
+// init
+window.addEventListener('DOMContentLoaded',()=>{updateBeta();freeUpdateBeta();});
+</script>
+</body>
+</html>

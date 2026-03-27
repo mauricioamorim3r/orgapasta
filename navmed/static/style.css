@@ -97,6 +97,59 @@ body {
   padding: 10px 12px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Widget controls ──────────────────────────────────────────────────────── */
+.widget-controls {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.widget-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.widget-btn-row {
+  display: flex;
+  gap: 6px;
+}
+.btn-widget {
+  flex: 1;
+  padding: 5px 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-widget:hover { background: #2563eb; }
+.btn-widget-secondary {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-widget-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.widget-status {
+  font-size: 10px;
+  color: var(--success);
+  min-height: 14px;
+  margin-top: 4px;
+  text-align: center;
 }
 
 #btn-add-root {
