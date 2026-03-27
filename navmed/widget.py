@@ -128,8 +128,11 @@ def _build_widget(root: tk.Tk, flask_ok: bool = True):
 
     # ── Drag support ──────────────────────────────────────────────────────────
     _drag = {"x": 0, "y": 0, "dragging": False}
+    _resizing = {"active": False}
 
     def _on_press(event):
+        if _resizing["active"]:
+            return
         _drag["x"] = event.x_root - root.winfo_x()
         _drag["y"] = event.y_root - root.winfo_y()
         _drag["dragging"] = True
@@ -196,10 +199,9 @@ def _build_widget(root: tk.Tk, flask_ok: bool = True):
         bd=0, highlightthickness=0,
     ).pack(side=tk.RIGHT, padx=2)
 
-    # ── Content area (fixed max height to keep things simple) ─────────────────
-    content = tk.Frame(root, bg=BG, height=240)
+    # ── Content area ──────────────────────────────────────────────────────────
+    content = tk.Frame(root, bg=BG)
     content.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
-    content.pack_propagate(False)
 
     # ── Error state ───────────────────────────────────────────────────────────
     if not flask_ok:
@@ -238,6 +240,7 @@ def _build_widget(root: tk.Tk, flask_ok: bool = True):
     _resize = {"x": 0, "y": 0}
 
     def _resize_press(event):
+        _resizing["active"] = True
         _resize["x"] = event.x_root
         _resize["y"] = event.y_root
         _resize["w"] = root.winfo_width()
@@ -250,8 +253,12 @@ def _build_widget(root: tk.Tk, flask_ok: bool = True):
         new_h = max(_resize["h"] + dy, MIN_H)
         root.geometry(f"{new_w}x{new_h}")
 
+    def _resize_release(event):
+        _resizing["active"] = False
+
     resize_handle.bind("<ButtonPress-1>", _resize_press)
     resize_handle.bind("<B1-Motion>", _resize_drag)
+    resize_handle.bind("<ButtonRelease-1>", _resize_release)
 
     # ── Populate / refresh ────────────────────────────────────────────────────
 
@@ -330,11 +337,17 @@ def _build_widget(root: tk.Tk, flask_ok: bool = True):
         def _do_fetch():
             cfg = _fetch_config()
             if cfg:
-                root.after(0, lambda: _apply_config(cfg))
+                try:
+                    root.after(0, lambda: _apply_config(cfg))
+                except Exception:
+                    pass  # window was destroyed
         threading.Thread(target=_do_fetch, daemon=True).start()
         root.after(REFRESH_INTERVAL_MS, refresh_data)
 
     # Initial populate using the config already fetched at startup
-    root.after(0, lambda: _apply_config(cfg))
+    try:
+        root.after(0, lambda: _apply_config(cfg))
+    except Exception:
+        pass  # window was destroyed
     # Schedule periodic refresh
     root.after(REFRESH_INTERVAL_MS, refresh_data)
