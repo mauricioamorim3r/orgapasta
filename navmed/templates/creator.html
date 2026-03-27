@@ -1,1 +1,1310 @@
-<!DOCTYPE html><html><head><title>NavMed - Criador</title></head><body><h1>NavMed - Criador de Estrutura</h1></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NavMed — Criador de Estrutura de Pastas</title>
+  <style>
+    /* ── CSS Variables (match style.css) ──────────────────────────────────────── */
+    :root {
+      --bg-deep:    #0f1117;
+      --bg-card:    #1a2035;
+      --bg-hover:   #1e2944;
+      --border:     #334155;
+      --accent:     #3b82f6;
+      --success:    #22c55e;
+      --warning:    #eab308;
+      --danger:     #ef4444;
+      --text:       #e2e8f0;
+      --muted:      #94a3b8;
+      --font-mono:  'Courier New', Courier, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── PAGE HEADER ─────────────────────────────────────────────────────────── */
+    #page-header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    #page-header h1 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.3px;
+      flex: 1;
+    }
+
+    .header-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .header-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .header-btn.back-btn {
+      color: var(--muted);
+    }
+
+    /* ── MAIN LAYOUT ─────────────────────────────────────────────────────────── */
+    #main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      height: calc(100vh - 53px);
+    }
+
+    /* ── LEFT COLUMN — Builder ───────────────────────────────────────────────── */
+    #builder-col {
+      width: 40%;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #builder-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #builder-scroll::-webkit-scrollbar { width: 4px; }
+    #builder-scroll::-webkit-scrollbar-track { background: transparent; }
+    #builder-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Destination path */
+    #dest-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #dest-section label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    #dest-input {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    #dest-input:focus { border-color: var(--accent); }
+    #dest-input::placeholder { color: var(--muted); }
+
+    .dest-hint {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Section divider */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+
+    /* Folder tree builder */
+    #folder-builder {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 40px;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      transition: border-color 0.12s;
+    }
+
+    .folder-item:hover {
+      border-color: var(--accent);
+    }
+
+    .folder-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .folder-name-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid transparent;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      padding: 2px 4px;
+      outline: none;
+      min-width: 0;
+      transition: border-color 0.15s;
+    }
+
+    .folder-name-input:focus {
+      border-bottom-color: var(--accent);
+    }
+
+    .folder-name-input::placeholder { color: var(--muted); }
+
+    .btn-add-child {
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      background: transparent;
+      color: var(--success);
+      border: 1px solid var(--success);
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .btn-add-child:hover {
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .btn-del-folder {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: color 0.1s, background 0.1s;
+      padding: 0;
+    }
+
+    .btn-del-folder:hover {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Builder footer actions */
+    #builder-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      padding: 7px 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      padding: 7px 14px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      padding: 7px 14px;
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .btn-create {
+      padding: 7px 18px;
+      background: var(--success);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: auto;
+      transition: background 0.15s;
+    }
+
+    .btn-create:hover { background: #16a34a; }
+    .btn-create:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── RIGHT COLUMN — Preview ──────────────────────────────────────────────── */
+    #preview-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #preview-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #preview-scroll::-webkit-scrollbar { width: 4px; }
+    #preview-scroll::-webkit-scrollbar-track { background: transparent; }
+    #preview-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Preview tree block */
+    #tree-preview-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #tree-preview {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+      white-space: pre;
+      color: var(--text);
+      min-height: 120px;
+      overflow-x: auto;
+    }
+
+    #tree-preview .preview-dest {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    #tree-preview .preview-folder {
+      color: var(--text);
+    }
+
+    #tree-preview .preview-placeholder {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Results block */
+    #results-block {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #results-list {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .result-item {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 0;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .result-item.result-ok { color: var(--success); }
+    .result-item.result-err { color: var(--danger); }
+
+    .result-icon { flex-shrink: 0; }
+
+    .result-path {
+      word-break: break-all;
+      flex: 1;
+    }
+
+    .result-error-msg {
+      color: var(--muted);
+      font-size: 10px;
+      margin-left: 4px;
+    }
+
+    /* Add to manager block */
+    #add-manager-block {
+      display: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #add-manager-block .block-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+    }
+
+    #add-manager-block .mgr-fields {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mgr-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mgr-field-group label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .mgr-input {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      padding: 6px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .mgr-input:focus { border-color: var(--accent); }
+    .mgr-input::placeholder { color: var(--muted); }
+
+    #input-mgr-label { width: 200px; }
+    #input-mgr-icon  { width: 60px; }
+
+    .btn-add-mgr {
+      padding: 7px 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      align-self: flex-end;
+      white-space: nowrap;
+    }
+
+    .btn-add-mgr:hover { background: #2563eb; }
+    .btn-add-mgr:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── TEMPLATE MODAL ──────────────────────────────────────────────────────── */
+    #template-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    }
+
+    #template-modal-overlay.open {
+      display: flex;
+    }
+
+    #template-modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 400px;
+      max-width: 95vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tpl-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tpl-modal-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .tpl-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+      transition: color 0.1s;
+    }
+
+    .tpl-modal-close:hover { color: var(--text); }
+
+    .tpl-modal-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tpl-input {
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    .tpl-input:focus { border-color: var(--accent); }
+    .tpl-input::placeholder { color: var(--muted); }
+
+    .tpl-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .tpl-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .tpl-list-item:hover {
+      border-color: var(--accent);
+      background: var(--bg-hover);
+    }
+
+    .tpl-list-item-name {
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tpl-del-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0 4px;
+      border-radius: 3px;
+      transition: color 0.1s;
+      flex-shrink: 0;
+    }
+
+    .tpl-del-btn:hover { color: var(--danger); }
+
+    .tpl-empty {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      padding: 16px;
+    }
+
+    .tpl-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── TOAST ───────────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      max-width: 320px;
+      transition: opacity 0.3s;
+    }
+
+    #toast.show { display: flex; }
+    #toast.toast-success { border-color: var(--success); color: var(--success); }
+    #toast.toast-error   { border-color: var(--danger);  color: var(--danger); }
+
+    /* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+    .builder-empty {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 5px;
+    }
+
+    /* ── LOADING OVERLAY ─────────────────────────────────────────────────────── */
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+    }
+
+    #loading-overlay.show { display: flex; }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── PAGE HEADER ──────────────────────────────────────────────────────────── -->
+  <div id="page-header">
+    <h1>NavMed — Criador de Estrutura de Pastas</h1>
+    <a href="/" class="header-btn back-btn">← Voltar ao Gerenciador</a>
+    <button class="header-btn" id="btn-save-template">💾 Salvar como Template</button>
+    <button class="header-btn" id="btn-load-template">📋 Carregar Template</button>
+  </div>
+
+  <!-- ── MAIN LAYOUT ─────────────────────────────────────────────────────────── -->
+  <div id="main-layout">
+
+    <!-- ── LEFT COLUMN — Builder ─────────────────────────────────────────────── -->
+    <div id="builder-col">
+      <div id="builder-scroll">
+
+        <!-- Destination path -->
+        <div id="dest-section">
+          <label for="dest-input">Local destino</label>
+          <input type="text" id="dest-input" placeholder="\\servidor\projetos\2025\NovoProj"
+                 oninput="onDestChange()" autocomplete="off" spellcheck="false">
+          <div class="dest-hint">
+            Cole um caminho UNC ou drive mapeado (ex: Z:\Projetos)
+          </div>
+        </div>
+
+        <!-- Tree builder -->
+        <div class="section-label">Estrutura de pastas</div>
+        <div id="folder-builder">
+          <div class="builder-empty">Nenhuma pasta adicionada. Clique em <strong>+ Pasta Raiz</strong> para começar.</div>
+        </div>
+
+      </div>
+
+      <!-- Footer actions -->
+      <div id="builder-footer">
+        <button class="btn-secondary" onclick="addRootFolder()">+ Pasta Raiz</button>
+        <button class="btn-danger" onclick="clearAll()">🗑 Limpar tudo</button>
+        <button class="btn-create" id="btn-criar" onclick="createStructure()">▶ Criar Estrutura</button>
+      </div>
+    </div>
+
+    <!-- ── RIGHT COLUMN — Preview ─────────────────────────────────────────────── -->
+    <div id="preview-col">
+      <div id="preview-scroll">
+
+        <!-- Tree Preview -->
+        <div id="tree-preview-block">
+          <div class="section-label">Pré-visualização</div>
+          <div id="tree-preview"><span class="preview-placeholder">Adicione pastas e defina o destino para ver a pré-visualização.</span></div>
+        </div>
+
+        <!-- Results (shown after creation) -->
+        <div id="results-block">
+          <div class="section-label">Resultado da criação</div>
+          <div id="results-list"></div>
+        </div>
+
+        <!-- Add to manager (shown after partial/full success) -->
+        <div id="add-manager-block">
+          <div class="block-title">Adicionar ao Gerenciador?</div>
+          <div class="mgr-fields">
+            <div class="mgr-field-group">
+              <label for="input-mgr-label">Label</label>
+              <input type="text" id="input-mgr-label" class="mgr-input" placeholder="Nome do grupo" autocomplete="off">
+            </div>
+            <div class="mgr-field-group">
+              <label for="input-mgr-icon">Ícone</label>
+              <input type="text" id="input-mgr-icon" class="mgr-input" placeholder="📁" maxlength="4">
+            </div>
+            <button class="btn-add-mgr" id="btn-add-to-mgr" onclick="addToManager()">✅ Adicionar ao Gerenciador</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TEMPLATE MODAL ─────────────────────────────────────────────────────── -->
+  <div id="template-modal-overlay">
+    <div id="template-modal">
+      <div class="tpl-modal-header">
+        <span class="tpl-modal-title" id="tpl-modal-title">Templates</span>
+        <button class="tpl-modal-close" onclick="closeTemplateModal()">&times;</button>
+      </div>
+      <div class="tpl-modal-body" id="tpl-modal-body">
+        <!-- populated by JS -->
+      </div>
+      <div class="tpl-modal-footer">
+        <button class="btn-secondary" onclick="closeTemplateModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOADING OVERLAY ────────────────────────────────────────────────────── -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- ── TOAST ──────────────────────────────────────────────────────────────── -->
+  <div id="toast"></div>
+
+  <!-- ── JAVASCRIPT ─────────────────────────────────────────────────────────── -->
+  <script>
+    // ── Data Model ──────────────────────────────────────────────────────────────
+    let folderTree = [];   // [{id, name, children: [...]}]
+    let destPath = '';
+    let _toastTimer = null;
+
+    // ── ID Generator ────────────────────────────────────────────────────────────
+    function generateId() {
+      return 'f' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    }
+
+    // ── Tree Mutations ──────────────────────────────────────────────────────────
+    function addRootFolder() {
+      folderTree.push({ id: generateId(), name: '', children: [] });
+      renderAll();
+    }
+
+    function addChild(parentId) {
+      const parent = findNode(folderTree, parentId);
+      if (parent) {
+        parent.children.push({ id: generateId(), name: '', children: [] });
+        renderAll();
+      }
+    }
+
+    function removeFolder(id) {
+      folderTree = removeNode(folderTree, id);
+      renderAll();
+    }
+
+    function clearAll() {
+      folderTree = [];
+      renderAll();
+    }
+
+    // ── Tree Helpers ─────────────────────────────────────────────────────────────
+    function findNode(nodes, id) {
+      for (const n of nodes) {
+        if (n.id === id) return n;
+        const found = findNode(n.children, id);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function removeNode(nodes, id) {
+      return nodes
+        .filter(n => n.id !== id)
+        .map(n => ({ ...n, children: removeNode(n.children, id) }));
+    }
+
+    function updateNodeName(id, name) {
+      const node = findNode(folderTree, id);
+      if (node) {
+        node.name = name;
+        renderPreview();   // live update preview only (no re-render builder to keep focus)
+      }
+    }
+
+    // ── Flat list for preview ────────────────────────────────────────────────────
+    function buildFlatList(nodes, basePath, level = 0) {
+      const result = [];
+      for (const node of nodes) {
+        const name = node.name.trim() || '(sem nome)';
+        const path = basePath ? basePath + '\\' + name : name;
+        result.push({ path, name, level });
+        result.push(...buildFlatList(node.children, path, level + 1));
+      }
+      return result;
+    }
+
+    // ── Render Builder ───────────────────────────────────────────────────────────
+    function renderBuilder() {
+      const container = document.getElementById('folder-builder');
+      container.innerHTML = '';
+
+      if (folderTree.length === 0) {
+        container.innerHTML = '<div class="builder-empty">Nenhuma pasta adicionada. Clique em <strong>+ Pasta Raiz</strong> para começar.</div>';
+        return;
+      }
+
+      function renderNodes(nodes, level) {
+        for (const node of nodes) {
+          const indent = level * 20;
+          const item = document.createElement('div');
+          item.className = 'folder-item';
+          item.style.marginLeft = indent + 'px';
+          item.dataset.id = node.id;
+
+          const icon = document.createElement('span');
+          icon.className = 'folder-icon';
+          icon.textContent = '📁';
+
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.className = 'folder-name-input';
+          nameInput.placeholder = 'Nome da pasta';
+          nameInput.value = node.name;
+          nameInput.setAttribute('data-id', node.id);
+          nameInput.addEventListener('input', function () {
+            updateNodeName(node.id, this.value);
+          });
+
+          const addChildBtn = document.createElement('button');
+          addChildBtn.className = 'btn-add-child';
+          addChildBtn.textContent = '+ Subpasta';
+          addChildBtn.addEventListener('click', function () {
+            // Flush current input value before adding child
+            node.name = nameInput.value;
+            addChild(node.id);
+          });
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-del-folder';
+          delBtn.title = 'Remover esta pasta e filhas';
+          delBtn.textContent = '🗑';
+          delBtn.addEventListener('click', function () {
+            removeFolder(node.id);
+          });
+
+          item.appendChild(icon);
+          item.appendChild(nameInput);
+          item.appendChild(addChildBtn);
+          item.appendChild(delBtn);
+          container.appendChild(item);
+
+          if (node.children.length > 0) {
+            renderNodes(node.children, level + 1);
+          }
+        }
+      }
+
+      renderNodes(folderTree, 0);
+    }
+
+    // ── Render Preview ───────────────────────────────────────────────────────────
+    function renderPreview() {
+      const preview = document.getElementById('tree-preview');
+      const dest = destPath.trim();
+
+      if (folderTree.length === 0 && !dest) {
+        preview.innerHTML = '<span class="preview-placeholder">Adicione pastas e defina o destino para ver a pré-visualização.</span>';
+        return;
+      }
+
+      const lines = [];
+
+      // Root line
+      const destDisplay = dest || '(destino não definido)';
+      lines.push({ text: '📂 ' + destDisplay, cls: dest ? 'preview-dest' : 'preview-placeholder' });
+
+      function renderTree(nodes, prefix) {
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+          const isLast = i === nodes.length - 1;
+          const connector = isLast ? '└─' : '├─';
+          const name = node.name.trim() || '(sem nome)';
+          lines.push({ text: prefix + connector + ' 📁 ' + name, cls: 'preview-folder' });
+          const childPrefix = prefix + (isLast ? '   ' : '│  ');
+          if (node.children.length > 0) {
+            renderTree(node.children, childPrefix);
+          }
+        }
+      }
+
+      renderTree(folderTree, '  ');
+
+      preview.innerHTML = lines.map(l =>
+        '<span class="' + l.cls + '">' + escapeHtml(l.text) + '</span>'
+      ).join('\n');
+    }
+
+    // ── HTML Escape ──────────────────────────────────────────────────────────────
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // ── Render All ───────────────────────────────────────────────────────────────
+    function renderAll() {
+      renderBuilder();
+      renderPreview();
+    }
+
+    // ── Destination change ───────────────────────────────────────────────────────
+    function onDestChange() {
+      destPath = document.getElementById('dest-input').value;
+      renderPreview();
+    }
+
+    // ── Collect tree state from live inputs ──────────────────────────────────────
+    function collectTreeFromInputs() {
+      // Sync all input values back to folderTree before sending
+      const inputs = document.querySelectorAll('.folder-name-input');
+      inputs.forEach(inp => {
+        const id = inp.getAttribute('data-id');
+        const node = findNode(folderTree, id);
+        if (node) node.name = inp.value;
+      });
+    }
+
+    // ── Create Structure ─────────────────────────────────────────────────────────
+    async function createStructure() {
+      collectTreeFromInputs();
+
+      const dest = destPath.trim();
+      if (!dest) {
+        showToast('Defina o caminho de destino antes de criar.', 'error');
+        document.getElementById('dest-input').focus();
+        return;
+      }
+
+      if (folderTree.length === 0) {
+        showToast('Adicione ao menos uma pasta antes de criar.', 'error');
+        return;
+      }
+
+      // Check at least one non-empty name
+      const flat = buildFlatList(folderTree, '');
+      const hasNamed = flat.some(f => f.name !== '(sem nome)');
+      if (!hasNamed) {
+        showToast('Dê um nome para ao menos uma pasta.', 'error');
+        return;
+      }
+
+      setLoading(true);
+      document.getElementById('btn-criar').disabled = true;
+
+      try {
+        const resp = await fetch('/api/mkdir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base_path: dest,
+            tree: folderTree,
+            add_to_manager: false
+          })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || data.ok === false) {
+          showToast('Erro: ' + (data.error || 'falha na criação'), 'error');
+          return;
+        }
+
+        renderResults(data.results || []);
+
+        const anyCreated = (data.results || []).some(r => r.created);
+        if (anyCreated) {
+          showAddToManager();
+        }
+
+        showToast('Estrutura criada!', 'success');
+
+      } catch (err) {
+        showToast('Erro de rede: ' + err.message, 'error');
+      } finally {
+        setLoading(false);
+        document.getElementById('btn-criar').disabled = false;
+      }
+    }
+
+    // ── Render Results ───────────────────────────────────────────────────────────
+    function renderResults(results) {
+      const block = document.getElementById('results-block');
+      const list = document.getElementById('results-list');
+
+      block.style.display = 'flex';
+      list.innerHTML = '';
+
+      if (results.length === 0) {
+        list.innerHTML = '<div class="tpl-empty">Nenhuma pasta processada.</div>';
+        return;
+      }
+
+      for (const r of results) {
+        const item = document.createElement('div');
+        item.className = 'result-item ' + (r.created ? 'result-ok' : 'result-err');
+
+        const icon = document.createElement('span');
+        icon.className = 'result-icon';
+        icon.textContent = r.created ? '✅' : '❌';
+
+        const pathSpan = document.createElement('span');
+        pathSpan.className = 'result-path';
+        pathSpan.textContent = r.path;
+
+        item.appendChild(icon);
+        item.appendChild(pathSpan);
+
+        if (!r.created && r.error) {
+          const errSpan = document.createElement('span');
+          errSpan.className = 'result-error-msg';
+          errSpan.textContent = '— ' + r.error;
+          item.appendChild(errSpan);
+        }
+
+        list.appendChild(item);
+      }
+    }
+
+    // ── Show Add-to-Manager section ──────────────────────────────────────────────
+    function showAddToManager() {
+      const block = document.getElementById('add-manager-block');
+      block.style.display = 'flex';
+      document.getElementById('btn-add-to-mgr').disabled = false;
+
+      // Pre-fill label from dest path basename
+      const labelInput = document.getElementById('input-mgr-label');
+      if (!labelInput.value) {
+        const parts = destPath.replace(/\\/g, '/').split('/').filter(Boolean);
+        labelInput.value = parts[parts.length - 1] || '';
+      }
+      const iconInput = document.getElementById('input-mgr-icon');
+      if (!iconInput.value) iconInput.value = '📁';
+    }
+
+    // ── Add to Manager ───────────────────────────────────────────────────────────
+    async function addToManager() {
+      collectTreeFromInputs();
+
+      const label = document.getElementById('input-mgr-label').value.trim();
+      const icon  = document.getElementById('input-mgr-icon').value.trim() || '📁';
+      const dest  = destPath.trim();
+
+      document.getElementById('btn-add-to-mgr').disabled = true;
+      setLoading(true);
+
+      try {
+        const resp = await fetch('/api/mkdir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base_path: dest,
+            tree: folderTree,
+            add_to_manager: true,
+            label: label,
+            icon: icon
+          })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok || data.ok === false) {
+          showToast('Erro ao adicionar: ' + (data.error || 'falha'), 'error');
+          document.getElementById('btn-add-to-mgr').disabled = false;
+          return;
+        }
+
+        showToast('Adicionado ao Gerenciador!', 'success');
+        // Button stays disabled to prevent duplicates
+
+      } catch (err) {
+        showToast('Erro de rede: ' + err.message, 'error');
+        document.getElementById('btn-add-to-mgr').disabled = false;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ── Template System ──────────────────────────────────────────────────────────
+    const TEMPLATE_KEY = 'navmed_templates';
+
+    function getTemplates() {
+      try {
+        return JSON.parse(localStorage.getItem(TEMPLATE_KEY) || '[]');
+      } catch { return []; }
+    }
+
+    function saveTemplates(list) {
+      localStorage.setItem(TEMPLATE_KEY, JSON.stringify(list));
+    }
+
+    function openSaveTemplateModal() {
+      const name = prompt('Nome do template:');
+      if (!name || !name.trim()) return;
+
+      collectTreeFromInputs();
+
+      const templates = getTemplates();
+      const existing = templates.findIndex(t => t.name === name.trim());
+      const entry = { name: name.trim(), tree: JSON.parse(JSON.stringify(folderTree)) };
+
+      if (existing >= 0) {
+        if (!confirm('Template "' + name.trim() + '" já existe. Substituir?')) return;
+        templates[existing] = entry;
+      } else {
+        templates.push(entry);
+      }
+
+      saveTemplates(templates);
+      showToast('Template "' + name.trim() + '" salvo!', 'success');
+    }
+
+    function openLoadTemplateModal() {
+      const templates = getTemplates();
+      const overlay = document.getElementById('template-modal-overlay');
+      const body = document.getElementById('tpl-modal-body');
+      document.getElementById('tpl-modal-title').textContent = 'Carregar Template';
+
+      body.innerHTML = '';
+
+      if (templates.length === 0) {
+        body.innerHTML = '<div class="tpl-empty">Nenhum template salvo ainda.</div>';
+      } else {
+        const list = document.createElement('div');
+        list.className = 'tpl-list';
+
+        for (let i = 0; i < templates.length; i++) {
+          const tpl = templates[i];
+          const item = document.createElement('div');
+          item.className = 'tpl-list-item';
+
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'tpl-list-item-name';
+          nameSpan.textContent = tpl.name;
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'tpl-del-btn';
+          delBtn.textContent = '🗑';
+          delBtn.title = 'Excluir template';
+          delBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!confirm('Excluir template "' + tpl.name + '"?')) return;
+            const all = getTemplates().filter(t => t.name !== tpl.name);
+            saveTemplates(all);
+            closeTemplateModal();
+            showToast('Template excluído.', 'success');
+          });
+
+          item.addEventListener('click', function () {
+            loadTemplate(tpl);
+            closeTemplateModal();
+          });
+
+          item.appendChild(nameSpan);
+          item.appendChild(delBtn);
+          list.appendChild(item);
+        }
+
+        body.appendChild(list);
+      }
+
+      overlay.classList.add('open');
+    }
+
+    function loadTemplate(tpl) {
+      // Deep-clone the tree and re-assign fresh IDs to avoid collisions
+      function cloneNodes(nodes) {
+        return nodes.map(n => ({
+          id: generateId(),
+          name: n.name,
+          children: cloneNodes(n.children || [])
+        }));
+      }
+      folderTree = cloneNodes(tpl.tree || []);
+      renderAll();
+      showToast('Template "' + tpl.name + '" carregado!', 'success');
+    }
+
+    function closeTemplateModal() {
+      document.getElementById('template-modal-overlay').classList.remove('open');
+    }
+
+    // ── UI Helpers ───────────────────────────────────────────────────────────────
+    function setLoading(show) {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.classList.toggle('show', show);
+    }
+
+    function showToast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'show toast-' + type;
+      if (_toastTimer) clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => {
+        el.className = '';
+      }, 3500);
+    }
+
+    // ── Event Listeners ──────────────────────────────────────────────────────────
+    document.getElementById('btn-save-template').addEventListener('click', function () {
+      collectTreeFromInputs();
+      if (folderTree.length === 0) {
+        showToast('Adicione pastas antes de salvar um template.', 'error');
+        return;
+      }
+      openSaveTemplateModal();
+    });
+
+    document.getElementById('btn-load-template').addEventListener('click', openLoadTemplateModal);
+
+    // Close modal on overlay click
+    document.getElementById('template-modal-overlay').addEventListener('click', function (e) {
+      if (e.target === this) closeTemplateModal();
+    });
+
+    // ── Initial Render ───────────────────────────────────────────────────────────
+    renderAll();
+  </script>
+
+</body>
+</html>

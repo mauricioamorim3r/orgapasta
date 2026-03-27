@@ -218,7 +218,9 @@ def make_dirs():
         manager_nodes = _create_tree(base_path, tree)
 
         if add_to_manager and manager_nodes:
-            group_label = os.path.basename(base_path) or base_path
+            # Accept optional label/icon from request body; fall back to sensible defaults
+            group_label = body.get("label", "").strip() or os.path.basename(base_path) or base_path
+            group_icon = body.get("icon", "").strip() or "📁"
             group_id = str(uuid.uuid4())
 
             def _add_group(cfg):
@@ -226,6 +228,7 @@ def make_dirs():
                     "id": group_id,
                     "type": "group",
                     "label": group_label,
+                    "icon": group_icon,
                     "children": manager_nodes,
                 }
                 cfg.setdefault("tree", []).append(group)
