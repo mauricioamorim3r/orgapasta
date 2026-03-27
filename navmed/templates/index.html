@@ -1,1 +1,118 @@
-<!DOCTYPE html><html><head><title>NavMed</title></head><body><h1>NavMed - Gerenciador</h1></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NavMed — Gerenciador</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────────────────────── -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <span class="sidebar-logo">NavMed</span>
+      <a href="/creator" class="creator-link">+ Nova Estrutura</a>
+    </div>
+
+    <div id="tree-container">
+      <!-- rendered by app.js -->
+    </div>
+
+    <div id="sidebar-footer">
+      <button id="btn-add-root">+ Adicionar grupo raiz</button>
+    </div>
+  </div>
+
+  <!-- ── MAIN PANEL ────────────────────────────────────────────────────────── -->
+  <div id="main-panel">
+
+    <!-- Welcome state (shown when nothing selected) -->
+    <div id="welcome-state">
+      <div class="welcome-icon">🗂️</div>
+      <h2 class="welcome-title">NavMed</h2>
+      <p class="welcome-sub">Selecione um item na sidebar para ver detalhes</p>
+      <p class="welcome-hint">ou clique em <strong>+ Adicionar grupo raiz</strong> para começar</p>
+    </div>
+
+    <!-- Item detail (shown when item selected) -->
+    <div id="item-detail" style="display:none">
+
+      <!-- Header row: icon + editable label + path -->
+      <div id="detail-header">
+        <span id="detail-icon" class="detail-icon"></span>
+        <div class="detail-title-block">
+          <input id="detail-label" class="detail-label-input" type="text" placeholder="Label">
+          <div id="detail-path" class="detail-path"></div>
+        </div>
+        <div class="detail-header-actions">
+          <button id="btn-detail-open" class="open-btn" style="display:none">Abrir</button>
+        </div>
+      </div>
+
+      <!-- Sections (folder/url) -->
+      <div id="detail-sections"></div>
+
+    </div>
+  </div>
+
+  <!-- ── MODAL ─────────────────────────────────────────────────────────────── -->
+  <div id="modal-overlay" style="display:none" role="dialog" aria-modal="true">
+    <div id="modal">
+      <div id="modal-header">
+        <span id="modal-title">Novo Item</span>
+        <button id="modal-close" class="modal-close-btn" aria-label="Fechar">&times;</button>
+      </div>
+
+      <div id="modal-body">
+        <!-- Label -->
+        <div class="form-group">
+          <label for="f-label">Label</label>
+          <input id="f-label" type="text" placeholder="Nome do item" autocomplete="off">
+        </div>
+
+        <!-- Tipo -->
+        <div class="form-group">
+          <label>Tipo</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="f-type" value="group" id="r-group"> Grupo
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="f-type" value="folder" id="r-folder"> Pasta
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="f-type" value="url" id="r-url"> URL
+            </label>
+          </div>
+        </div>
+
+        <!-- Path / URL (hidden for group) -->
+        <div class="form-group" id="fg-path">
+          <label for="f-path" id="lbl-path">Caminho</label>
+          <input id="f-path" type="text" placeholder="C:\caminho\da\pasta ou https://...">
+        </div>
+
+        <!-- Ícone -->
+        <div class="form-group">
+          <label for="f-icon">Ícone <span class="hint-text">(emoji)</span></label>
+          <input id="f-icon" type="text" placeholder="📁" maxlength="4" style="width:80px">
+        </div>
+
+        <!-- Notas -->
+        <div class="form-group">
+          <label for="f-notes">Notas</label>
+          <textarea id="f-notes" rows="3" placeholder="Observações..."></textarea>
+        </div>
+      </div>
+
+      <div id="modal-footer">
+        <button id="btn-modal-cancel" class="btn-secondary">Cancelar</button>
+        <button id="btn-modal-save" class="btn-primary">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
