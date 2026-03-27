@@ -16,7 +16,7 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 
-from api.config_api import load_config, save_config
+from api.config_api import modify_config
 
 # ── Blueprint ─────────────────────────────────────────────────────────────────
 folders_bp = Blueprint("folders_bp", __name__)
@@ -42,20 +42,27 @@ def open_path():
         if path.startswith("http://") or path.startswith("https://"):
             webbrowser.open(path)
         elif path.startswith("\\\\") or (len(path) >= 3 and path[1] == ":" and path[2] in ("/", "\\")):
-            os.startfile(path)
+            if hasattr(os, "startfile"):
+                os.startfile(path)
+            else:
+                return jsonify({"ok": False, "error": "os.startfile not available on this platform"}), 501
         else:
             # Attempt generic open for other paths
-            os.startfile(path)
+            if hasattr(os, "startfile"):
+                os.startfile(path)
+            else:
+                return jsonify({"ok": False, "error": "os.startfile not available on this platform"}), 501
 
-        # Update recent list
+        # Update recent list atomically
         if item_id:
-            cfg = load_config()
-            recent = cfg.get("recent", [])
-            # Remove existing occurrence then prepend
-            recent = [r for r in recent if r != item_id]
-            recent.insert(0, item_id)
-            cfg["recent"] = recent[:10]
-            save_config(cfg)
+            def _update_recent(cfg):
+                recent = cfg.get("recent", [])
+                # Remove existing occurrence then prepend
+                recent = [r for r in recent if r != item_id]
+                recent.insert(0, item_id)
+                cfg["recent"] = recent[:10]
+
+            modify_config(_update_recent)
 
         return jsonify({"ok": True})
 
@@ -211,15 +218,19 @@ def make_dirs():
         manager_nodes = _create_tree(base_path, tree)
 
         if add_to_manager and manager_nodes:
-            cfg = load_config()
-            group = {
-                "id": str(uuid.uuid4()),
-                "type": "group",
-                "label": os.path.basename(base_path) or base_path,
-                "children": manager_nodes,
-            }
-            cfg.setdefault("tree", []).append(group)
-            save_config(cfg)
+            group_label = os.path.basename(base_path) or base_path
+            group_id = str(uuid.uuid4())
+
+            def _add_group(cfg):
+                group = {
+                    "id": group_id,
+                    "type": "group",
+                    "label": group_label,
+                    "children": manager_nodes,
+                }
+                cfg.setdefault("tree", []).append(group)
+
+            modify_config(_add_group)
 
         return jsonify({"results": results})
 

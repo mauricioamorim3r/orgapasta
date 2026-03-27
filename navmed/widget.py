@@ -25,15 +25,18 @@ REFRESH_INTERVAL_MS = 5000
 
 def run_widget():
     """Entry point called from daemon thread in app.py."""
-    # Wait for Flask to be ready (retry until it responds)
-    _wait_for_flask()
-
     root = tk.Tk()
+
+    # Wait for Flask to be ready (retry until it responds)
+    # _wait_for_flask blocks in the calling thread, but here we are already
+    # in a daemon thread spawned by app.py, so blocking is safe.
+    _wait_for_flask(root)
+
     _build_widget(root)
     root.mainloop()
 
 
-def _wait_for_flask(max_attempts: int = 20, delay: float = 1.0):
+def _wait_for_flask(root: tk.Tk, max_attempts: int = 20, delay: float = 1.0):
     """Block until Flask is accepting connections, with retries."""
     if requests is None:
         return
@@ -43,6 +46,22 @@ def _wait_for_flask(max_attempts: int = 20, delay: float = 1.0):
             return
         except Exception:
             time.sleep(delay)
+    # All retries exhausted — show an error label in the widget.
+    root.after(0, lambda: _show_error_label(root))
+
+
+def _show_error_label(root: tk.Tk):
+    """Display a prominent error label when Flask cannot be reached."""
+    lbl = tk.Label(
+        root,
+        text="⚠ Servidor NavMed não encontrado",
+        fg="#ff4444",
+        bg="#1a2035",
+        font=("Segoe UI", 9, "bold"),
+        wraplength=200,
+        justify="center",
+    )
+    lbl.pack(expand=True, fill=tk.BOTH, padx=8, pady=8)
 
 
 def _fetch_config() -> dict:
@@ -113,17 +132,21 @@ def _build_widget(root: tk.Tk):
         root.geometry(f"+{new_x}+{new_y}")
 
     def _on_release(event):
-        # Save new position to config
-        cfg = _fetch_config()
-        wc = cfg.get("widget", {})
-        wc["x"] = root.winfo_x()
-        wc["y"] = root.winfo_y()
-        cfg["widget"] = wc
-        if requests is not None:
+        # Save new position via the dedicated PATCH endpoint, in a daemon thread.
+        if requests is None:
+            return
+        pos_x = root.winfo_x()
+        pos_y = root.winfo_y()
+        def _do():
             try:
-                requests.post(f"{API_BASE}/api/config", json=cfg, timeout=2)
+                requests.patch(
+                    f"{API_BASE}/api/config/widget-position",
+                    json={"x": pos_x, "y": pos_y},
+                    timeout=2,
+                )
             except Exception:
                 pass
+        threading.Thread(target=_do, daemon=True).start()
 
     root.bind("<ButtonPress-1>", _on_press)
     root.bind("<B1-Motion>", _on_drag)
@@ -217,8 +240,8 @@ def _build_widget(root: tk.Tk):
         _walk(nodes)
         return index
 
-    def refresh_data():
-        cfg = _fetch_config()
+    def _apply_config(cfg: dict):
+        """Update widget UI from a fetched config dict. Must run on tkinter thread."""
         tree = cfg.get("tree", [])
         recent_ids = cfg.get("recent", [])
         flat = _flatten_tree(tree)
@@ -261,7 +284,13 @@ def _build_widget(root: tk.Tk):
                 font=("Segoe UI", 8), anchor="w"
             ).pack(fill=tk.X)
 
-        # Schedule next refresh
+    def refresh_data():
+        """Fetch config in a daemon thread, then apply results on the tkinter thread."""
+        def _do_fetch():
+            cfg = _fetch_config()
+            if cfg:
+                root.after(0, lambda: _apply_config(cfg))
+        threading.Thread(target=_do_fetch, daemon=True).start()
         root.after(REFRESH_INTERVAL_MS, refresh_data)
 
     # Initial populate
