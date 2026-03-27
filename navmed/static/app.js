@@ -309,9 +309,8 @@ function renderDetailPanel(item) {
     pathEl.textContent = item.path || '';
     openBtn.style.display = 'inline-block';
     openBtn.onclick = () => openItem(item);
-    // scan sections rendered after scanFolder() returns
+    // scan sections (including notes) are rendered by renderScanSkeleton / renderScanResults
     sections.innerHTML = '';
-    renderNoteSection(item, sections);
   } else {
     pathEl.textContent = '';
     openBtn.style.display = 'none';
@@ -433,22 +432,22 @@ function renderScanResults(data) {
     <div class="meta-row">
       <div class="meta-item">
         <span class="meta-icon">📄</span>
-        <span class="meta-value">${data.file_count}</span>
+        <span class="meta-value">${escapeHTML(String(data.file_count))}</span>
         <span class="meta-label">arquivos</span>
       </div>
       <div class="meta-item">
         <span class="meta-icon">📁</span>
-        <span class="meta-value">${data.dir_count}</span>
+        <span class="meta-value">${escapeHTML(String(data.dir_count))}</span>
         <span class="meta-label">pastas</span>
       </div>
       <div class="meta-item">
         <span class="meta-icon">💾</span>
-        <span class="meta-value">${formatBytes(data.total_size_bytes)}</span>
+        <span class="meta-value">${escapeHTML(formatBytes(data.total_size_bytes))}</span>
       </div>
       ${data.last_modified ? `
       <div class="meta-item">
         <span class="meta-icon">🕐</span>
-        <span class="meta-value">${formatDate(data.last_modified)}</span>
+        <span class="meta-value">${escapeHTML(formatDate(data.last_modified))}</span>
         <span class="meta-label">últ. modificação</span>
       </div>` : ''}
     </div>
