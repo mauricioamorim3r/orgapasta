@@ -21,6 +21,19 @@
 
     <div id="sidebar-footer">
       <button id="btn-add-root">+ Adicionar grupo raiz</button>
+
+      <div class="widget-controls">
+        <span class="widget-label">Widget flutuante</span>
+        <div class="widget-btn-row">
+          <button id="btn-launch-widget" class="btn-widget" title="Abre o widget na tela">
+            ◉ Lançar widget
+          </button>
+          <button id="btn-startup-widget" class="btn-widget-secondary" title="Iniciar automaticamente com o Windows">
+            ⏻ Startup
+          </button>
+        </div>
+        <div id="widget-status" class="widget-status"></div>
+      </div>
     </div>
   </div>
 
@@ -114,5 +127,28 @@
   </div>
 
   <script src="/static/app.js"></script>
+  <script>
+    // ── Widget standalone controls ──────────────────────────────────────────
+    document.getElementById('btn-launch-widget').addEventListener('click', async () => {
+      const el = document.getElementById('widget-status');
+      el.textContent = 'Iniciando…';
+      try {
+        const r = await fetch('/api/widget/launch', { method: 'POST' });
+        const d = await r.json();
+        el.textContent = d.ok ? '✔ Widget aberto' : '⚠ ' + (d.error || 'Erro');
+        setTimeout(() => el.textContent = '', 3000);
+      } catch { el.textContent = '⚠ Falha ao contatar servidor'; }
+    });
+
+    document.getElementById('btn-startup-widget').addEventListener('click', async () => {
+      const el = document.getElementById('widget-status');
+      try {
+        const r = await fetch('/api/widget/startup', { method: 'POST' });
+        const d = await r.json();
+        el.textContent = d.message || (d.ok ? '✔ Configurado' : '⚠ Erro');
+        setTimeout(() => el.textContent = '', 4000);
+      } catch { el.textContent = '⚠ Falha ao contatar servidor'; }
+    });
+  </script>
 </body>
 </html>
