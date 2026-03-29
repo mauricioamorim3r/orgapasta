@@ -851,3 +851,56 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// ── Busca cruzada ──────────────────────────────────────────────────────────
+let searchDebounce = null;
+
+function normalizeSearch(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function itemMatchesQuery(item, q) {
+  if (!q) return true;
+  const fields = [item.label, item.path, item.notes, ...(item.tags || [])];
+  return fields.some(f => normalizeSearch(f).includes(q));
+}
+
+function applySearch(q) {
+  const norm = normalizeSearch(q);
+  const items = document.querySelectorAll('.tree-item');
+  items.forEach(el => {
+    el.classList.remove('search-hidden', 'search-match');
+  });
+  if (!norm) return;
+
+  items.forEach(el => {
+    const id = el.dataset.id;
+    const found = findItemById(config.tree, id);
+    const item = found ? found.item : null;
+    if (!item) return;
+    if (itemMatchesQuery(item, norm)) {
+      el.classList.add('search-match');
+      // Show ancestors
+      let parent = el.parentElement?.closest('.tree-item');
+      while (parent) {
+        parent.classList.remove('search-hidden');
+        parent = parent.parentElement?.closest('.tree-item');
+      }
+    } else {
+      el.classList.add('search-hidden');
+    }
+  });
+}
+
+document.getElementById('search-input')?.addEventListener('input', e => {
+  clearTimeout(searchDebounce);
+  const q = e.target.value.trim();
+  document.getElementById('search-clear').style.display = q ? '' : 'none';
+  searchDebounce = setTimeout(() => applySearch(q), 200);
+});
+
+document.getElementById('search-clear')?.addEventListener('click', () => {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  applySearch('');
+});
