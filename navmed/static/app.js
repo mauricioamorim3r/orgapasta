@@ -317,6 +317,35 @@ function renderDetailPanel(item) {
     sections.innerHTML = '';
     renderNoteSection(item, sections);
   }
+
+  // Botão Copiar
+  const copyBtn = document.getElementById('btn-detail-copy');
+  if (item.path) {
+    copyBtn.style.display = '';
+    copyBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(item.path);
+        copyBtn.textContent = '✔ Copiado!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = '⎘ Copiar';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch {
+        // Fallback para ambientes sem clipboard API
+        const ta = document.createElement('textarea');
+        ta.value = item.path;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyBtn.textContent = '✔ Copiado!';
+        setTimeout(() => { copyBtn.textContent = '⎘ Copiar'; }, 2000);
+      }
+    };
+  } else {
+    copyBtn.style.display = 'none';
+  }
 }
 
 function renderURLSections(item, container) {

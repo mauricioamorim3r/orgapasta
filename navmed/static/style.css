@@ -456,6 +456,23 @@ body {
   background: #2563eb;
 }
 
+.copy-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied {
+  border-color: var(--success);
+  color: var(--success);
+  background: rgba(34,197,94,.08);
+}
+
 /* ── SUMMARY SECTIONS ───────────────────────────────────────────────────────── */
 .summary-section {
   background: var(--bg-card);
