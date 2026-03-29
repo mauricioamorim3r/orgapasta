@@ -143,7 +143,9 @@ function buildTreeLI(item, parentArray, index) {
   li.dataset.id = item.id;
   li.dataset.type = item.type || '';
   if (item.type === 'file') {
-    li.dataset.ext = item.path ? item.path.split('.').pop().toLowerCase() : '';
+    const filename = (item.path || '').split(/[\\/]/).pop();
+    const dot = filename.lastIndexOf('.');
+    li.dataset.ext = dot > 0 ? filename.slice(dot + 1).toLowerCase() : '';
   }
   if (selectedId === item.id) li.classList.add('selected');
 
@@ -655,6 +657,8 @@ function openModal(mode, parentId, item) {
     document.getElementById('f-notes').value = item.notes || '';
     const radio = document.querySelector(`input[name="f-type"][value="${item.type}"]`);
     if (radio) { radio.checked = true; onTypeChange(); }
+    // If item already has a custom icon in edit mode, treat it as manually set
+    if (item.icon) iconManuallyChanged = true;
   } else {
     title.textContent = 'Novo Item';
   }
@@ -762,12 +766,14 @@ function onDragEnd(li) {
 // ── File icon helper ─────────────────────────────────────────────────────────
 function iconForFile(path) {
   if (!path) return '📄';
-  const ext = path.split('.').pop().toLowerCase();
+  const filename = path.split(/[\\/]/).pop();       // handle both / and \
+  const dot = filename.lastIndexOf('.');
+  const ext = dot > 0 ? filename.slice(dot + 1).toLowerCase() : '';
   const map = {
     xlsx: '📊', xls: '📊', csv: '📊',
     pdf: '📕',
     docx: '📝', doc: '📝',
-    pptx: '📊', ppt: '📊',
+    pptx: '📽️', ppt: '📽️',
     txt: '📋', log: '📋',
     zip: '🗜️', rar: '🗜️',
     png: '🖼️', jpg: '🖼️', jpeg: '🖼️',
