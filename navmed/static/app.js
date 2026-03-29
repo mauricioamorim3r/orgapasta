@@ -320,11 +320,12 @@ function renderDetailPanel(item) {
 
   // Botão Copiar
   const copyBtn = document.getElementById('btn-detail-copy');
-  if (item.path) {
+  const copyTarget = item.path || item.url || null;
+  if (copyTarget) {
     copyBtn.style.display = '';
     copyBtn.onclick = async () => {
       try {
-        await navigator.clipboard.writeText(item.path);
+        await navigator.clipboard.writeText(copyTarget);
         copyBtn.textContent = '✔ Copiado!';
         copyBtn.classList.add('copied');
         setTimeout(() => {
@@ -332,15 +333,20 @@ function renderDetailPanel(item) {
           copyBtn.classList.remove('copied');
         }, 2000);
       } catch {
-        // Fallback para ambientes sem clipboard API
+        // execCommand is deprecated but serves as a last-resort fallback
+        // for non-HTTPS or older WebView environments
         const ta = document.createElement('textarea');
-        ta.value = item.path;
+        ta.value = copyTarget;
         document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
         copyBtn.textContent = '✔ Copiado!';
-        setTimeout(() => { copyBtn.textContent = '⎘ Copiar'; }, 2000);
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = '⎘ Copiar';
+          copyBtn.classList.remove('copied');
+        }, 2000);
       }
     };
   } else {
