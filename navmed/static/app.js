@@ -871,7 +871,10 @@ function applySearch(q) {
   items.forEach(el => {
     el.classList.remove('search-hidden', 'search-match');
   });
-  if (!norm) return;
+  if (!norm) {
+    renderTree();
+    return;
+  }
 
   items.forEach(el => {
     const id = el.dataset.id;
@@ -880,11 +883,18 @@ function applySearch(q) {
     if (!item) return;
     if (itemMatchesQuery(item, norm)) {
       el.classList.add('search-match');
-      // Show ancestors
-      let parent = el.parentElement?.closest('.tree-item');
-      while (parent) {
-        parent.classList.remove('search-hidden');
-        parent = parent.parentElement?.closest('.tree-item');
+      // Show ancestors and expand any collapsed tree-children containers
+      let node = el;
+      while (true) {
+        // Walk up through <ul class="tree-children"> if present
+        const ul = node.parentElement;
+        if (ul && ul.classList.contains('tree-children')) {
+          ul.classList.remove('collapsed');  // expand the container
+        }
+        const parentLi = node.parentElement?.closest('.tree-item');
+        if (!parentLi) break;
+        parentLi.classList.remove('search-hidden');
+        node = parentLi;
       }
     } else {
       el.classList.add('search-hidden');
