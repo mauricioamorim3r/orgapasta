@@ -863,6 +863,19 @@ body {
   color: var(--text);
 }
 
+/* ── FILE ITEM TYPE ─────────────────────────────────────────────────────────── */
+.tree-item[data-type="file"] .tree-label {
+  font-style: italic;
+}
+.tree-item[data-type="file"]::after {
+  content: attr(data-ext);
+  font-size: 9px;
+  color: var(--muted);
+  margin-left: 4px;
+  text-transform: uppercase;
+  opacity: .7;
+}
+
 /* ── EMPTY TREE STATE ───────────────────────────────────────────────────────── */
 .tree-empty {
   padding: 24px 16px;
