@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ISO 5167-2 — Placa de Orifício</title>
+<style>
+:root {
+  --bg: #0c0e14;
+  --surface: #13161f;
+  --surface2: #1a1e2b;
+  --border: #252836;
+  --border2: #2e3347;
+  --accent: #4f8ef7;
+  --accent-dim: rgba(79,142,247,0.12);
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.12);
+  --yellow: #fbbf24;
+  --yellow-dim: rgba(251,191,36,0.12);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.12);
+  --purple: #a78bfa;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --label: #8892a4;
+  --mono: 'Cascadia Code','Fira Code','Consolas',monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── HEADER ── */
+.hdr { display: flex; align-items: center; gap: 12px; padding: 0 20px; height: 48px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.hdr-logo { font-weight: 800; font-size: 11px; letter-spacing: 1.5px; color: #fff; background: var(--accent); padding: 3px 8px; border-radius: 4px; }
+.hdr-title { font-weight: 700; font-size: 14px; }
+.hdr-sub { font-size: 11px; color: var(--muted); }
+.hdr-sep { flex: 1; }
+.hdr-norm { font-size: 10px; color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); padding: 2px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+.mode-toggle { display: flex; gap: 4px; }
+.mode-btn { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 5px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: all .15s; }
+.mode-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* ── LAYOUT ── */
+.body { display: flex; flex: 1; overflow: hidden; }
+.sidebar { width: 340px; flex-shrink: 0; overflow-y: auto; border-right: 1px solid var(--border); padding: 14px 14px 80px; display: flex; flex-direction: column; gap: 10px; }
+.main { flex: 1; overflow-y: auto; padding: 14px 16px 80px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── SUMMARY BAR ── */
+.summary-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 10px; z-index: 10; }
+.summary-text { flex: 1; font-family: var(--mono); font-size: 11px; color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.copy-btn { font-size: 11px; font-weight: 600; background: var(--accent-dim); border: 1px solid rgba(79,142,247,0.3); color: var(--accent); padding: 4px 14px; border-radius: 5px; cursor: pointer; flex-shrink: 0; transition: all .15s; }
+.copy-btn:hover { background: rgba(79,142,247,0.2); }
+
+/* ── SECTION ── */
+.sec { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.sec-hd { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+.sec-hd:hover { background: var(--surface2); }
+.sec-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sec-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--label); flex: 1; }
+.sec-chevron { font-size: 10px; color: var(--muted); transition: transform .2s; }
+.sec-chevron.open { transform: rotate(180deg); }
+.sec-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ── FORM ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 10px; color: var(--label); font-weight: 500; }
+.field .hint { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.input-wrap { display: flex; }
+.input-wrap input { flex: 1; min-width: 0; }
+.input-wrap .unit { background: var(--bg); border: 1px solid var(--border2); border-left: none; border-radius: 0 5px 5px 0; padding: 0 8px; font-size: 10px; color: var(--muted); white-space: nowrap; display: flex; align-items: center; }
+input, select { background: var(--bg); border: 1px solid var(--border2); color: var(--text); border-radius: 5px; padding: 6px 8px; font-size: 12px; width: 100%; font-family: inherit; transition: border-color .15s; }
+.input-wrap input { border-radius: 5px 0 0 5px; }
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+input[readonly] { color: var(--accent); background: var(--accent-dim); border-color: transparent; font-weight: 600; font-family: var(--mono); }
+select { cursor: pointer; }
+
+/* Segment control */
+.seg { display: flex; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; overflow: hidden; }
+.seg-btn { flex: 1; padding: 6px; border: none; background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.seg-btn.active { background: var(--accent-dim); color: var(--accent); }
+
+/* ── RESULTS ── */
+.res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.res-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.metric.hero { border-color: var(--accent); background: var(--accent-dim); }
+.metric-lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+.metric-val { font-size: 26px; font-weight: 800; line-height: 1; font-family: var(--mono); }
+.metric-unit { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.metric.c-green .metric-val { color: var(--green); }
+.metric.c-yellow .metric-val { color: var(--yellow); }
+.metric.c-red .metric-val { color: var(--red); }
+.metric.c-accent .metric-val { color: var(--accent); }
+.metric.c-purple .metric-val { color: var(--purple); }
+
+/* Gauge bar */
+.gauge-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.gauge-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.gauge-track { position: relative; height: 28px; background: var(--bg); border-radius: 6px; overflow: hidden; border: 1px solid var(--border2); }
+.gauge-zone { position: absolute; top: 0; bottom: 0; left: 20%; width: 60%; background: rgba(52,211,153,0.07); border-left: 1px dashed rgba(52,211,153,0.25); border-right: 1px dashed rgba(52,211,153,0.25); }
+.gauge-fill { position: absolute; top: 0; left: 0; bottom: 0; border-radius: 5px; transition: width .4s, background .4s; }
+.gauge-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.9); z-index: 1; }
+.gauge-ticks { display: flex; justify-content: space-between; margin-top: 3px; font-size: 9px; color: var(--muted); padding: 0 1px; }
+
+/* Criteria */
+.criteria-list { display: flex; flex-direction: column; gap: 5px; }
+.crit { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; background: var(--bg); border-left: 3px solid var(--border); }
+.crit.ok { border-left-color: var(--green); background: var(--green-dim); }
+.crit.warn { border-left-color: var(--yellow); background: var(--yellow-dim); }
+.crit.bad { border-left-color: var(--red); background: var(--red-dim); }
+.crit.info { border-left-color: var(--accent); background: var(--accent-dim); }
+.crit-icon { font-size: 12px; width: 18px; text-align: center; flex-shrink: 0; }
+.crit-name { flex: 1; font-size: 11px; color: var(--label); }
+.crit-val { font-size: 11px; font-weight: 600; font-family: var(--mono); }
+.crit.ok .crit-val { color: var(--green); }
+.crit.warn .crit-val { color: var(--yellow); }
+.crit.bad .crit-val { color: var(--red); }
+.crit.info .crit-val { color: var(--accent); }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.data-table th { background: var(--bg); padding: 7px 10px; text-align: left; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); font-weight: 600; }
+.data-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,.025); font-family: var(--mono); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .td-name { font-family: inherit; color: var(--label); }
+.data-table .td-sym { color: var(--muted); font-size: 10px; }
+
+/* Badge */
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+.badge.go { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
+.badge.warn { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(251,191,36,.3); }
+.badge.nogo { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Section collapse */
+.sec-body.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">ISO 5167</div>
+  <div>
+    <div class="hdr-title">Placa de Orifício — Calculadora</div>
+    <div class="hdr-sub">Reader-Harris / Gallagher · Tomadas de pressão: canto, flange, D e D/2</div>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="btn-mode-q" onclick="setMode('Q_dP')">Q → ΔP</button>
+    <button class="mode-btn" id="btn-mode-dp" onclick="setMode('dP_Q')">ΔP → Q</button>
+  </div>
+  <div class="hdr-norm">ISO 5167-2 : 2022</div>
+</div>
+
+<div class="body">
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<div class="sidebar">
+
+  <!-- 1. Geometry -->
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <span class="sec-dot" style="background:#4f8ef7"></span>
+      <span class="sec-title">Geometria</span>
+      <span class="sec-chevron open">▼</span>
+    </div>
+    <div class="sec-body">
+      <div class="field">
+        <label>Tipo de tomada de pressão</label>
+        <select id="tapType" oninput="calc()">
+          <option value="flange">Flange taps (ISO 5167-2, cl. 5.1)</option>
+          <option value="corner">Corner taps / Canto (ISO 5167-2, cl. 5.2)</option>
+          <option value="DandD2">D e D/2 taps (ISO 5167-2, cl. 5.3)</option>
+        </select>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Diâmetro interno D</label>
+          <div class="input-wrap"><input type="number" id="D_mm" value="102.26" step="0.01" min="10" oninput="calc()"><span class="unit">mm</span></div>
+          <span class="hint">50 ≤ D ≤ 1000 mm</span>
+        </div>
+        <div class="field">
+          <label>Diâmetro do orifício d</label>
+          <div class="input-wrap"><input type="number" id="d_mm" value="30.73" step="0.01" min="1" oninput="calc()"><span class="unit">mm</span></div>
+          <span class="hint">d = β × D</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>β (calculado)</label>
+        <input type="text" id="beta_ro" readonly value="0.3006">
+        <span class="hint">0.10 ≤ β ≤ 0.75 (ISO 5167-2)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Fluid -->
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <span class="sec-dot" style="background:#34d399"></span>
+      <span class="sec-title">Fluido</span>
+      <span class="sec-chevron open">▼</span>
+    </div>
+    <div class="sec-body">
+      <div class="field">
+        <div class="seg">
+          <button class="seg-btn active" id="fbtn-gas" onclick="setFluid('gas')">⛽ Gás</button>
+          <button class="seg-btn" id="fbtn-liq" onclick="setFluid('liquid')">💧 Líquido</button>
+        </div>
+      </div>
+
+      <!-- GAS -->
+      <div id="gas-fields">
+        <div class="g2" style="margin-bottom:8px">
+          <div class="field">
+            <label>Gravidade específica γ</label>
+            <input type="number" id="gamma_g" value="0.65" step="0.01" min="0.3" max="2.0" oninput="calc()">
+            <span class="hint">Relativo ao ar (M = γ×28.965)</span>
+          </div>
+          <div class="field">
+            <label>Peso molecular M</label>
+            <input type="text" id="M_ro" readonly value="18.83">
+            <span class="hint">kg/kmol (auto)</span>
+          </div>
+        </div>
+        <div class="g2" style="margin-bottom:8px">
+          <div class="field">
+            <label>Fator Z (compressibilidade)</label>
+            <input type="number" id="Z_fac" value="0.88" step="0.001" min="0.1" max="1.2" oninput="calc()">
+            <span class="hint">Z = 1 → gás ideal</span>
+          </div>
+          <div class="field">
+            <label>Exp. isentrópico κ</label>
+            <input type="number" id="kappa" value="1.27" step="0.01" min="1.0" max="2.0" oninput="calc()">
+            <span class="hint">≈ 1.27 GN, 1.4 ar</span>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="field">
+            <label>Viscosidade dinâmica μ</label>
+            <div class="input-wrap"><input type="number" id="mu_g" value="0.012" step="0.001" min="0.001" oninput="calc()"><span class="unit">cP</span></div>
+          </div>
+          <div class="field">
+            <label>Densidade calc. ρ₁</label>
+            <input type="text" id="rho_ro" readonly value="—">
+            <span class="hint">kg/m³ (cond. operac.)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIQUID -->
+      <div id="liq-fields" style="display:none">
+        <div class="g2">
+          <div class="field">
+            <label>Densidade ρ₁</label>
+            <div class="input-wrap"><input type="number" id="rho_liq" value="850" step="1" oninput="calc()"><span class="unit">kg/m³</span></div>
+          </div>
+          <div class="field">
+            <label>Viscosidade μ</label>
+            <div class="input-wrap"><input type="number" id="mu_liq" value="2.0" step="0.1" oninput="calc()"><span class="unit">cP</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Condições Operacionais -->
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <span class="sec-dot" style="background:#a78bfa"></span>
+      <span class="sec-title">Condições Operacionais</span>
+      <span class="sec-chevron open">▼</span>
+    </div>
+    <div class="sec-body">
+      <div class="g2">
+        <div class="field">
+          <label>Pressão montante P₁</label>
+          <div class="input-wrap"><input type="number" id="P1_kPa" value="3000" step="10" oninput="calc()"><span class="unit">kPa abs</span></div>
+        </div>
+        <div class="field">
+          <label>Temperatura T₁</label>
+          <div class="input-wrap"><input type="number" id="T1_C" value="40" step="1" oninput="calc()"><span class="unit">°C</span></div>
+        </div>
+      </div>
+
+      <!-- Q→ΔP: input Q -->
+      <div id="q-input-section">
+        <div class="field" id="q-gas-field">
+          <label>Vazão de gás Q</label>
+          <div class="g2">
+            <div class="input-wrap"><input type="number" id="Qg_sm3d" value="50000" step="1000" oninput="calc()"><span class="unit">Sm³/d</span></div>
+            <div class="input-wrap"><input type="text" id="Qg_sm3h_ro" readonly placeholder="—"><span class="unit">Sm³/h</span></div>
+          </div>
+          <span class="hint">Condições padrão: 20°C, 101.325 kPa, Z=1</span>
+        </div>
+        <div class="field" id="q-liq-field" style="display:none">
+          <label>Vazão de líquido Q</label>
+          <div class="input-wrap"><input type="number" id="Ql_m3h" value="30" step="1" oninput="calc()"><span class="unit">m³/h</span></div>
+        </div>
+      </div>
+
+      <!-- ΔP→Q: input ΔP -->
+      <div id="dp-input-section" style="display:none">
+        <div class="field">
+          <label>Pressão diferencial ΔP</label>
+          <div class="input-wrap"><input type="number" id="dP_in" value="12.5" step="0.1" oninput="calc()"><span class="unit">kPa</span></div>
+          <span class="hint">ΔP/P₁ ≤ 0.25 para validade do fator Y (ISO 5167-2)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Transmissor -->
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)">
+      <span class="sec-dot" style="background:#fbbf24"></span>
+      <span class="sec-title">Transmissor ΔP</span>
+      <span class="sec-chevron open">▼</span>
+    </div>
+    <div class="sec-body">
+      <div class="g2">
+        <div class="field">
+          <label>URV (Fundo de escala)</label>
+          <div class="input-wrap"><input type="number" id="dp_urv" value="25" step="5" oninput="calc()"><span class="unit">kPa</span></div>
+        </div>
+        <div class="field">
+          <label>LRV (Zero)</label>
+          <div class="input-wrap"><input type="number" id="dp_lrv" value="0" step="1" oninput="calc()"><span class="unit">kPa</span></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="field">
+          <label>Incerteza do transm. (±)</label>
+          <div class="input-wrap"><input type="number" id="dp_unc" value="0.1" step="0.05" min="0" max="5" oninput="calc()"><span class="unit">% FS</span></div>
+        </div>
+        <div class="field">
+          <label>Incerteza de d (±)</label>
+          <div class="input-wrap"><input type="number" id="d_unc" value="0.05" step="0.01" min="0" max="1" oninput="calc()"><span class="unit">mm</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ═══════════════ END SIDEBAR ═══════════════ -->
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main" id="main-results">
+  <!-- filled by JS -->
+</div>
+
+</div><!-- body -->
+
+<!-- SUMMARY BAR -->
+<div class="summary-bar">
+  <div class="summary-text" id="summary-text">Aguardando cálculo…</div>
+  <button class="copy-btn" onclick="copySum()">📋 Copiar</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let fluidType = 'gas';
+let calcMode  = 'Q_dP'; // 'Q_dP' or 'dP_Q'
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+const R_UNIV  = 8314.46;   // J/(kmol·K)
+const M_AIR   = 28.9647;   // kg/kmol
+const T_STD_K = 293.15;    // 20°C
+const P_STD   = 101325;    // Pa
+
+const $ = id => document.getElementById(id);
+const fv = id => parseFloat($(id).value) || 0;
+const fmt = (n, d) => isFinite(n) ? n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}) : '—';
+const fmtSI = n => {
+  if (!isFinite(n)) return '—';
+  if (n >= 1e9) return (n/1e9).toFixed(2)+' G';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+' M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+' k';
+  return n.toFixed(0);
+};
+
+/* ══════════════════════════════════════════════
+   ISO 5167-2  L1, L2' by tap type
+══════════════════════════════════════════════ */
+function tapParams(tap, D_mm) {
+  if (tap === 'corner')  return { L1: 0,           L2p: 0 };
+  if (tap === 'flange')  return { L1: 25.4/D_mm,   L2p: 25.4/D_mm };
+  if (tap === 'DandD2')  return { L1: 1.0,          L2p: 0.47 };
+  return { L1: 25.4/D_mm, L2p: 25.4/D_mm };
+}
+
+/* ══════════════════════════════════════════════
+   ISO 5167-2  Reader-Harris/Gallagher  Cd
+══════════════════════════════════════════════ */
+function calcCd(beta, ReD, D_mm, tap) {
+  if (ReD < 10) ReD = 10;
+  const { L1, L2p } = tapParams(tap, D_mm);
+  const A   = Math.pow(19000 * beta / ReD, 0.8);
+  const M2p = L2p > 0 ? 2 * L2p / (1 - beta) : 0;
+
+  let C = 0.5961
+    + 0.0261 * beta**2
+    - 0.216  * beta**8
+    + 0.000521 * Math.pow(1e6 * beta / ReD, 0.7)
+    + (0.0188 + 0.0063 * A) * Math.pow(beta, 3.5) * Math.pow(1e6 / ReD, 0.3)
+    + (0.043 + 0.080 * Math.exp(-10*L1) - 0.123 * Math.exp(-7*L1))
+      * (1 - 0.11*A) * beta**4 / (1 - beta**4);
+
+  if (M2p > 0) C -= 0.031 * (M2p - 0.8 * Math.pow(M2p, 1.1)) * beta**1.3;
+
+  // Correction for small D (ISO 5167-2)
+  if (D_mm < 71.12) C += 0.011 * (0.75 - beta) * (2.8 - D_mm / 25.4);
+
+  return C;
+}
+
+/* ══════════════════════════════════════════════
+   ISO 5167-2  Expansion factor  Y (gas)
+══════════════════════════════════════════════ */
+function calcY(beta, dP_Pa, P1_Pa, kappa) {
+  if (dP_Pa <= 0 || P1_Pa <= 0) return 1.0;
+  const tau = dP_Pa / P1_Pa;
+  if (tau >= 1) return 0.5;
+  return 1 - (0.351 + 0.256*beta**4 + 0.93*beta**8) * (1 - Math.pow(1-tau, 1/kappa));
+}
+
+/* ══════════════════════════════════════════════
+   Re_D  (from mass flowrate)
+══════════════════════════════════════════════ */
+function calcReD(qm_kgs, D_m, mu_Pas) {
+  return 4 * qm_kgs / (Math.PI * D_m * mu_Pas);
+}
+
+/* ══════════════════════════════════════════════
+   MODE A: Q → ΔP  (iterates only on Y for gas)
+══════════════════════════════════════════════ */
+function solve_Q_to_dP(params) {
+  const { D_mm, d_mm, beta, rho1, mu_Pas, isGas, P1_Pa, kappa, qm_kgs, tap } = params;
+  const D = D_mm/1e3, d = d_mm/1e3;
+  const Ad = Math.PI/4 * d*d;
+  const Ev = 1/Math.sqrt(1-beta**4);
+
+  // Re is fixed once qm is known
+  const ReD = calcReD(qm_kgs, D, mu_Pas);
+  const Cd  = calcCd(beta, ReD, D_mm, tap);
+
+  // Iterate only Y
+  let Y = 1.0, dP = 0;
+  for (let i=0; i<25; i++) {
+    const prev = dP;
+    dP = Math.pow(qm_kgs / (Cd * Ev * Y * Ad), 2) / (2*rho1);
+    if (isGas) Y = calcY(beta, dP, P1_Pa, kappa);
+    if (Math.abs(dP - prev) < 1e-6) break;
+  }
+  return { dP_Pa: dP, Cd, Ev, Y, ReD };
+}
+
+/* ══════════════════════════════════════════════
+   MODE B: ΔP → Q  (iterates Cd & Y)
+══════════════════════════════════════════════ */
+function solve_dP_to_Q(params) {
+  const { D_mm, d_mm, beta, rho1, mu_Pas, isGas, P1_Pa, kappa, dP_Pa, tap } = params;
+  const D = D_mm/1e3, d = d_mm/1e3;
+  const Ad = Math.PI/4 * d*d;
+  const Ev = 1/Math.sqrt(1-beta**4);
+
+  let Cd = 0.606, Y = 1.0, qm = 0, ReD = 1e5;
+  for (let i=0; i<30; i++) {
+    const pCd = Cd, pY = Y;
+    if (isGas) Y = calcY(beta, dP_Pa, P1_Pa, kappa);
+    qm  = Cd * Ev * Y * Ad * Math.sqrt(2 * dP_Pa * rho1);
+    ReD = calcReD(qm, D, mu_Pas);
+    Cd  = calcCd(beta, ReD, D_mm, tap);
+    if (Math.abs(Cd-pCd)<1e-7 && Math.abs(Y-pY)<1e-7) break;
+  }
+  return { qm_kgs: qm, Cd, Ev, Y, ReD };
+}
+
+/* ══════════════════════════════════════════════
+   GAS DENSITY at operating conditions
+══════════════════════════════════════════════ */
+function gasRho(P_Pa, T_K, gamma, Z) {
+  const M = gamma * M_AIR;
+  return P_Pa * M / (Z * R_UNIV * T_K);
+}
+
+/* ══════════════════════════════════════════════
+   UNIT CONVERSIONS
+══════════════════════════════════════════════ */
+function qm_to_Sm3d(qm_kgs, gamma) {
+  const M    = gamma * M_AIR;
+  const rhoS = P_STD * M / (R_UNIV * T_STD_K); // Z=1 at std
+  return qm_kgs * 86400 / rhoS;
+}
+function Sm3d_to_qm(Qsm3d, gamma) {
+  const M    = gamma * M_AIR;
+  const rhoS = P_STD * M / (R_UNIV * T_STD_K);
+  return Qsm3d * rhoS / 86400;
+}
+
+/* ══════════════════════════════════════════════
+   UNCERTAINTY (ISO 5167-2, Annex B simplified)
+   RSS method
+══════════════════════════════════════════════ */
+function calcUncertainty(beta, Cd, Y, ReD, dP_Pa, P1_Pa, isGas, d_unc_mm, d_mm, dp_unc_pct_fs, dp_fs_Pa) {
+  // Cd uncertainty (ISO 5167-2, Table 2)
+  let u_Cd;
+  if (beta <= 0.20) u_Cd = 0.007;
+  else if (beta <= 0.60) u_Cd = 0.005;
+  else if (beta <= 0.75) u_Cd = beta / 60;
+  else u_Cd = 0.013;
+
+  // Ev: δEv/Ev = β⁴/(1-β⁴) × δβ/β  → negligible for β<0.5
+  const u_Ev = beta**4 / (1-beta**4) * 0.001; // approx
+
+  // Y: δY ≈ 4×(ΔP/P₁)/κ × (uncertainty in κ and ΔP/P₁)
+  const u_Y = isGas ? Math.abs(4 * dP_Pa / (P1_Pa * 1.27) * 0.01) : 0;
+
+  // d: δd/d = d_unc / d_mm  → contribution to q: 2×δd/d
+  const u_d = 2 * (d_unc_mm / d_mm);
+
+  // ΔP: δΔP/ΔP = dp_unc_pct_fs/100 × dp_fs_Pa / dP_Pa
+  const u_dP = dP_Pa > 0 ? 0.5 * (dp_unc_pct_fs/100 * dp_fs_Pa / dP_Pa) : 0.01;
+
+  // Total (RSS)
+  const u_total = Math.sqrt(u_Cd**2 + u_Ev**2 + u_Y**2 + u_d**2 + u_dP**2) * 100; // %
+  return { u_total, u_Cd: u_Cd*100, u_Y: u_Y*100, u_d: u_d*100, u_dP: u_dP*100 };
+}
+
+/* ══════════════════════════════════════════════
+   ISO 5167-2  VALIDITY CHECKS
+══════════════════════════════════════════════ */
+function isoChecks(beta, ReD, D_mm, tap, dP_Pa, P1_Pa, isGas, Cd) {
+  const checks = [];
+  const tau = dP_Pa / P1_Pa;
+
+  // β range
+  const bOk = beta >= 0.10 && beta <= 0.75;
+  const bIdeal = beta >= 0.20 && beta <= 0.65;
+  checks.push({
+    name: 'Beta ratio β',
+    symbol: 'β',
+    val: beta.toFixed(4),
+    ref: '0.10 – 0.75 (ideal: 0.20 – 0.65)',
+    state: !bOk ? 'bad' : !bIdeal ? 'warn' : 'ok'
+  });
+
+  // D range
+  const dOk = D_mm >= 50 && D_mm <= 1000;
+  checks.push({
+    name: 'Diâm. interno D',
+    symbol: 'D',
+    val: D_mm.toFixed(2)+' mm',
+    ref: '50 – 1000 mm',
+    state: dOk ? 'ok' : 'bad'
+  });
+
+  // Re_D minimum (ISO 5167-2 Table 1)
+  let reMin;
+  if (tap === 'corner') {
+    reMin = beta <= 0.56 ? 5000 : Math.round(16000*beta**2);
+  } else if (tap === 'flange') {
+    reMin = beta <= 0.6 ? 5000 : 10000;
+  } else { // DandD2
+    reMin = beta <= 0.56 ? 10000 : Math.round(16000*beta**2);
+  }
+  const reOk = ReD >= reMin;
+  const reIdeal = ReD >= 20000;
+  checks.push({
+    name: 'Reynolds Re_D',
+    symbol: 'Re_D',
+    val: fmtSI(ReD),
+    ref: `≥ ${fmtSI(reMin)} (Iso 5167-2)`,
+    state: !reOk ? 'bad' : !reIdeal ? 'warn' : 'ok'
+  });
+
+  // ΔP/P₁ ≤ 0.25 for Y validity
+  if (isGas) {
+    const yOk = tau <= 0.25;
+    checks.push({
+      name: 'Razão ΔP/P₁ (fator Y)',
+      symbol: 'τ',
+      val: (tau*100).toFixed(2)+'%',
+      ref: '≤ 25% (validade do fator Y)',
+      state: yOk ? 'ok' : 'warn'
+    });
+  }
+
+  // Cd range sanity
+  const cdOk = Cd > 0.5 && Cd < 0.9;
+  checks.push({
+    name: 'Coef. descarga C_d',
+    symbol: 'C',
+    val: Cd.toFixed(5),
+    ref: 'Típico: 0.595 – 0.620',
+    state: cdOk ? 'info' : 'warn'
+  });
+
+  return checks;
+}
+
+/* ══════════════════════════════════════════════
+   MAIN CALC
+══════════════════════════════════════════════ */
+function calc() {
+  // Inputs
+  const D_mm  = fv('D_mm'),    d_mm  = fv('d_mm');
+  const tap   = $('tapType').value;
+  const P1_Pa = fv('P1_kPa') * 1e3;
+  const T1_K  = fv('T1_C') + 273.15;
+  const dp_urv = fv('dp_urv'), dp_lrv = fv('dp_lrv');
+  const dp_unc = fv('dp_unc'), d_unc = fv('d_unc');
+  const dp_span_Pa = (dp_urv - dp_lrv) * 1e3;
+
+  if (!D_mm || !d_mm || d_mm >= D_mm) { $('main-results').innerHTML = errBox('d deve ser menor que D'); return; }
+
+  const beta = d_mm / D_mm;
+  $('beta_ro').value = beta.toFixed(4);
+
+  let rho1, mu_Pas, qm_kgs, isGas, dP_Pa, gamma;
+
+  if (fluidType === 'gas') {
+    isGas = true;
+    gamma = fv('gamma_g');
+    const Z = fv('Z_fac');
+    mu_Pas = fv('mu_g') * 1e-3;
+    rho1   = gasRho(P1_Pa, T1_K, gamma, Z);
+    $('rho_ro').value = rho1.toFixed(3) + ' kg/m³';
+    $('M_ro').value   = (gamma * M_AIR).toFixed(2);
+  } else {
+    isGas  = false;
+    rho1   = fv('rho_liq');
+    mu_Pas = fv('mu_liq') * 1e-3;
+    gamma  = 0;
+  }
+
+  const base = { D_mm, d_mm, beta, rho1, mu_Pas, isGas, P1_Pa, kappa: fv('kappa'), tap };
+
+  let res;
+  if (calcMode === 'Q_dP') {
+    if (isGas) {
+      const Qsm3d = fv('Qg_sm3d');
+      $('Qg_sm3h_ro').value = (Qsm3d/24).toFixed(1);
+      qm_kgs = Sm3d_to_qm(Qsm3d, gamma);
+    } else {
+      qm_kgs = rho1 * fv('Ql_m3h') / 3600;
+    }
+    res = solve_Q_to_dP({ ...base, qm_kgs });
+    dP_Pa = res.dP_Pa;
+  } else {
+    dP_Pa  = fv('dP_in') * 1e3;
+    res    = solve_dP_to_Q({ ...base, dP_Pa });
+    qm_kgs = res.qm_kgs;
+  }
+
+  const { Cd, Ev, Y, ReD } = res;
+
+  // ΔP % of span
+  const dP_kPa  = dP_Pa / 1e3;
+  const pct      = dp_span_Pa > 0 ? (dP_Pa - dp_lrv*1e3) / dp_span_Pa * 100 : 0;
+  const dpOk     = pct >= 20 && pct <= 80;
+  const dpWarn   = !dpOk && pct >= 10 && pct <= 90;
+  const dpBad    = pct < 10 || pct > 90;
+  const dpColor  = dpOk ? '#34d399' : dpWarn ? '#fbbf24' : '#f87171';
+
+  // Flow range at 20% and 100% FS
+  const res100 = solve_dP_to_Q({ ...base, dP_Pa: dp_span_Pa });
+  const res20  = solve_dP_to_Q({ ...base, dP_Pa: dp_span_Pa * 0.20 });
+
+  // Uncertainty
+  const unc = calcUncertainty(beta, Cd, Y, ReD, dP_Pa, P1_Pa, isGas, d_unc, d_mm,
+    dp_unc, dp_span_Pa);
+
+  // ISO checks
+  const checks = isoChecks(beta, ReD, D_mm, tap, dP_Pa, P1_Pa, isGas, Cd);
+  const globalBad  = checks.some(c => c.state === 'bad');
+  const globalWarn = !globalBad && (checks.some(c => c.state === 'warn') || dpWarn || dpBad);
+  const globalOk   = !globalBad && !globalWarn && dpOk;
+
+  // Q labels
+  let qLabel, q100label, q20label;
+  if (isGas) {
+    const Qsm3d = qm_to_Sm3d(qm_kgs, gamma);
+    const Q100  = qm_to_Sm3d(res100.qm_kgs, gamma);
+    const Q20   = qm_to_Sm3d(res20.qm_kgs,  gamma);
+    qLabel    = fmt(Qsm3d/1000, 2) + ' MSm³/d  (' + fmt(Qsm3d/24, 0) + ' Sm³/h)';
+    q100label = fmt(Q100/1000, 2) + ' MSm³/d';
+    q20label  = fmt(Q20/1000, 2) + ' MSm³/d';
+  } else {
+    const Ql    = qm_kgs / rho1 * 3600;
+    const Q100  = res100.qm_kgs / rho1 * 3600;
+    const Q20   = res20.qm_kgs  / rho1 * 3600;
+    qLabel    = fmt(Ql, 2) + ' m³/h';
+    q100label = fmt(Q100, 2) + ' m³/h';
+    q20label  = fmt(Q20, 2) + ' m³/h';
+  }
+
+  // ── RENDER ──
+  const badgeCls  = globalOk ? 'go' : globalWarn ? 'warn' : 'nogo';
+  const badgeTxt  = globalOk ? '✓ PLACA APROVADA — GO' : globalWarn ? '⚠ VERIFICAR CRITÉRIOS' : '✗ PLACA REPROVADA — NO-GO';
+  const dpClass   = dpOk ? 'c-green' : dpWarn ? 'c-yellow' : 'c-red';
+  const reClass   = ReD >= 20000 ? 'c-green' : ReD >= 5000 ? 'c-yellow' : 'c-red';
+  const betaClass = beta >= 0.30 && beta <= 0.65 ? 'c-green' : beta >= 0.10 && beta <= 0.75 ? 'c-yellow' : 'c-red';
+  const yClass    = !isGas ? 'c-green' : Y >= 0.95 ? 'c-green' : Y >= 0.85 ? 'c-yellow' : 'c-red';
+
+  const barPct = Math.min(100, Math.max(0, pct)).toFixed(1);
+
+  const mainResult = calcMode === 'Q_dP'
+    ? `<div class="metric hero">
+        <div class="metric-lbl">ΔP Calculado</div>
+        <div class="metric-val" style="color:var(--accent)">${fmt(dP_kPa,3)}</div>
+        <div class="metric-unit">kPa  ·  ${pct.toFixed(1)}% da escala</div>
+       </div>`
+    : `<div class="metric hero">
+        <div class="metric-lbl">Vazão Calculada</div>
+        <div class="metric-val" style="color:var(--accent);font-size:18px">${qLabel}</div>
+        <div class="metric-unit">a partir de ΔP = ${fmt(dP_kPa,3)} kPa</div>
+       </div>`;
+
+  $('main-results').innerHTML = `
+
+    <!-- STATUS GLOBAL -->
+    <div class="sec" style="border-color:${globalOk?'rgba(52,211,153,.4)':globalWarn?'rgba(251,191,36,.4)':'rgba(248,113,113,.4)'}">
+      <div class="sec-body" style="flex-direction:row;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="badge ${badgeCls}">${badgeTxt}</span>
+        <span style="font-size:11px;color:var(--muted)">d=${d_mm} mm · D=${D_mm} mm · β=${beta.toFixed(4)} · C_d=${Cd.toFixed(5)} · ${$('tapType').options[$('tapType').selectedIndex].text.split('(')[0].trim()}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted)">Y = ${Y.toFixed(5)} · Re_D = ${fmtSI(ReD)}</span>
+      </div>
+    </div>
+
+    <!-- MAIN OUTPUT + METRICS -->
+    <div class="res-grid">
+      ${mainResult}
+      <div class="metric ${dpClass}">
+        <div class="metric-lbl">ΔP / Escala Transm.</div>
+        <div class="metric-val">${pct.toFixed(1)}<span style="font-size:14px">%</span></div>
+        <div class="metric-unit">${fmt(dP_kPa,3)} kPa de ${dp_urv} kPa (URV)</div>
+      </div>
+      <div class="metric ${reClass}">
+        <div class="metric-lbl">Reynolds Re_D</div>
+        <div class="metric-val" style="font-size:20px">${fmtSI(ReD)}</div>
+        <div class="metric-unit">${ReD>=20000?'Turbulência plena ✓':ReD>=5000?'Aceitável ⚠':'Insuficiente ✗'}</div>
+      </div>
+    </div>
+
+    <!-- GAUGE -->
+    <div class="gauge-wrap">
+      <div class="gauge-label">
+        <span>Posição no fundo de escala do transmissor — ${dp_lrv} → ${dp_urv} kPa</span>
+        <span style="color:${dpColor};font-weight:700">${pct.toFixed(2)}%</span>
+      </div>
+      <div class="gauge-track">
+        <div class="gauge-zone"></div>
+        <div class="gauge-fill" style="width:${barPct}%;background:${dpColor}88"></div>
+        <div class="gauge-text">ΔP = ${fmt(dP_kPa,3)} kPa &nbsp;·&nbsp; ${pct.toFixed(1)}% FS</div>
+      </div>
+      <div class="gauge-ticks">
+        <span>0%</span><span style="margin-left:20%">20%</span>
+        <span style="margin-left:auto;margin-right:calc(20% - 32px)">80%</span><span>100%</span>
+      </div>
+    </div>
+
+    <!-- FLOWRATE RANGE -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggleSec(this)">
+        <span class="sec-dot" style="background:#a78bfa"></span>
+        <span class="sec-title">Faixa de operação</span>
+        <span class="sec-chevron open">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="res-grid-2">
+          <div class="metric c-green">
+            <div class="metric-lbl">Qmáx — 100% FS (URV)</div>
+            <div class="metric-val" style="font-size:16px">${q100label}</div>
+            <div class="metric-unit">${fmt(dp_urv,1)} kPa → C_d=${res100.Cd.toFixed(5)}</div>
+          </div>
+          <div class="metric c-yellow">
+            <div class="metric-lbl">Qmín — 20% FS</div>
+            <div class="metric-val" style="font-size:16px">${q20label}</div>
+            <div class="metric-unit">${fmt(dp_urv*0.2,2)} kPa → C_d=${res20.Cd.toFixed(5)}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Turndown = ${res100.qm_kgs > 0 && res20.qm_kgs > 0 ? (res100.qm_kgs/res20.qm_kgs).toFixed(1) : '—'} : 1 &nbsp;·&nbsp;
+          Rangeabilidade baseada na faixa 20–100% da escala do transmissor.
+        </div>
+      </div>
+    </div>
+
+    <!-- ISO CRITERIA -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggleSec(this)">
+        <span class="sec-dot" style="background:#34d399"></span>
+        <span class="sec-title">Critérios ISO 5167-2</span>
+        <span class="sec-chevron open">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="criteria-list">
+          <div class="crit ${dpOk?'ok':dpWarn?'warn':'bad'}">
+            <span class="crit-icon">${dpOk?'✓':dpWarn?'⚠':'✗'}</span>
+            <span class="crit-name">ΔP na faixa do transmissor (20–80% ideal / 10–90% aceitável)</span>
+            <span class="crit-val">${pct.toFixed(1)}%</span>
+          </div>
+          ${checks.map(c=>`
+          <div class="crit ${c.state}">
+            <span class="crit-icon">${c.state==='ok'?'✓':c.state==='warn'?'⚠':c.state==='info'?'ℹ':'✗'}</span>
+            <span class="crit-name">${c.name} &nbsp;<small style="color:var(--muted)">${c.ref}</small></span>
+            <span class="crit-val">${c.val}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAILED TABLE -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggleSec(this)">
+        <span class="sec-dot" style="background:#4f8ef7"></span>
+        <span class="sec-title">Resultados detalhados</span>
+        <span class="sec-chevron open">▼</span>
+      </div>
+      <div class="sec-body" style="padding:0">
+        <table class="data-table">
+          <tr><th>Parâmetro</th><th>Símbolo</th><th>Valor</th><th>Unidade</th></tr>
+          <tr><td class="td-name">Diâmetro interno</td><td class="td-sym">D</td><td>${fmt(D_mm,2)}</td><td>mm</td></tr>
+          <tr><td class="td-name">Diâmetro orifício (20°C)</td><td class="td-sym">d</td><td>${fmt(d_mm,3)}</td><td>mm</td></tr>
+          <tr><td class="td-name">Beta ratio</td><td class="td-sym">β = d/D</td><td>${beta.toFixed(6)}</td><td>—</td></tr>
+          <tr><td class="td-name">Fator de velocidade</td><td class="td-sym">E_v</td><td>${Ev.toFixed(6)}</td><td>—</td></tr>
+          <tr><td class="td-name">Coef. descarga (RHG)</td><td class="td-sym">C_d</td><td>${Cd.toFixed(6)}</td><td>—</td></tr>
+          <tr><td class="td-name">Fator de expansão</td><td class="td-sym">Y (ε)</td><td>${Y.toFixed(6)}</td><td>—</td></tr>
+          <tr><td class="td-name">Número de Reynolds</td><td class="td-sym">Re_D</td><td>${ReD.toFixed(0)}</td><td>—</td></tr>
+          <tr><td class="td-name">Pressão diferencial</td><td class="td-sym">ΔP</td><td>${fmt(dP_kPa,4)}</td><td>kPa</td></tr>
+          <tr><td class="td-name">Densidade (op.)</td><td class="td-sym">ρ₁</td><td>${rho1.toFixed(4)}</td><td>kg/m³</td></tr>
+          <tr><td class="td-name">Vazão mássica</td><td class="td-sym">q_m</td><td>${fmt(qm_kgs*3600,2)}</td><td>kg/h</td></tr>
+          ${isGas?`<tr><td class="td-name">Vazão volumétrica std</td><td class="td-sym">Q_std</td><td>${fmt(qm_to_Sm3d(qm_kgs,gamma),1)}</td><td>Sm³/d</td></tr>`:''}
+          ${!isGas?`<tr><td class="td-name">Vazão volumétrica op.</td><td class="td-sym">Q_op</td><td>${fmt(qm_kgs/rho1*3600,3)}</td><td>m³/h</td></tr>`:''}
+        </table>
+      </div>
+    </div>
+
+    <!-- UNCERTAINTY -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggleSec(this)">
+        <span class="sec-dot" style="background:#fbbf24"></span>
+        <span class="sec-title">Incerteza de medição — ISO 5167-2 Anexo B (RSS)</span>
+        <span class="sec-chevron open">▼</span>
+      </div>
+      <div class="sec-body">
+        <div class="res-grid">
+          <div class="metric c-accent">
+            <div class="metric-lbl">Incerteza Total ±</div>
+            <div class="metric-val">${unc.u_total.toFixed(2)}</div>
+            <div class="metric-unit">% (nível de confiança ~95%)</div>
+          </div>
+          <div class="metric">
+            <div class="metric-lbl">Contribuição C_d</div>
+            <div class="metric-val" style="font-size:18px;color:var(--label)">${unc.u_Cd.toFixed(3)}</div>
+            <div class="metric-unit">%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-lbl">Contribuição ΔP</div>
+            <div class="metric-val" style="font-size:18px;color:var(--label)">${unc.u_dP.toFixed(3)}</div>
+            <div class="metric-unit">%</div>
+          </div>
+        </div>
+        <div class="criteria-list" style="margin-top:6px">
+          <div class="crit info"><span class="crit-icon">ℹ</span>
+            <span class="crit-name">Incerteza em d: ±${d_unc} mm</span>
+            <span class="crit-val">${unc.u_d.toFixed(3)} %</span></div>
+          ${isGas?`<div class="crit info"><span class="crit-icon">ℹ</span>
+            <span class="crit-name">Incerteza em Y (fator expansão)</span>
+            <span class="crit-val">${unc.u_Y.toFixed(3)} %</span></div>`:''}
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">
+          Método RSS (Root Sum of Squares). Não inclui incerteza de composição do fluido e efeitos de instalação.
+          Para incerteza rigorosa, consultar ISO 5167-1 Anexo B e ASME MFC-3M.
+        </div>
+      </div>
+    </div>
+
+  `;
+
+  // Update summary bar
+  const tapName = $('tapType').options[$('tapType').selectedIndex].text.split('(')[0].trim();
+  $('summary-text').textContent =
+    `Placa β=${beta.toFixed(4)} · D=${D_mm}mm · d=${d_mm}mm · ${tapName} · ` +
+    `ΔP=${fmt(dP_kPa,3)} kPa (${pct.toFixed(1)}% FS) · ` +
+    `Cd=${Cd.toFixed(5)} · Y=${Y.toFixed(4)} · Re=${fmtSI(ReD)} · ` +
+    `Q=${qLabel} · ` +
+    `Incerteza ±${unc.u_total.toFixed(2)}% · ` +
+    (globalOk ? 'STATUS: GO ✓' : globalWarn ? 'STATUS: VERIFICAR ⚠' : 'STATUS: NO-GO ✗');
+}
+
+function errBox(msg) {
+  return `<div style="padding:40px;text-align:center;color:var(--red)">${msg}</div>`;
+}
+
+/* ══════════════════════════════════════════════
+   UI CONTROLS
+══════════════════════════════════════════════ */
+function setFluid(type) {
+  fluidType = type;
+  $('fbtn-gas').classList.toggle('active', type==='gas');
+  $('fbtn-liq').classList.toggle('active', type==='liquid');
+  $('gas-fields').style.display = type==='gas' ? '' : 'none';
+  $('liq-fields').style.display = type==='liquid' ? '' : 'none';
+  $('q-gas-field').style.display = type==='gas' ? '' : 'none';
+  $('q-liq-field').style.display = type==='liquid' ? '' : 'none';
+  calc();
+}
+
+function setMode(mode) {
+  calcMode = mode;
+  $('btn-mode-q').classList.toggle('active',  mode==='Q_dP');
+  $('btn-mode-dp').classList.toggle('active', mode==='dP_Q');
+  $('q-input-section').style.display  = mode==='Q_dP' ? '' : 'none';
+  $('dp-input-section').style.display = mode==='dP_Q' ? '' : 'none';
+  calc();
+}
+
+function toggleSec(hd) {
+  const body = hd.nextElementSibling;
+  const chev = hd.querySelector('.sec-chevron');
+  body.classList.toggle('hidden');
+  chev.classList.toggle('open', !body.classList.contains('hidden'));
+}
+
+function copySum() {
+  navigator.clipboard.writeText($('summary-text').textContent).catch(()=>{});
+  const btn = document.querySelector('.copy-btn');
+  btn.textContent = '✓ Copiado!';
+  setTimeout(()=> btn.textContent='📋 Copiar', 1800);
+}
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+calc();
+</script>
+</body>
+</html>

@@ -7,6 +7,9 @@
 let config = { tree: [], recent: [], widget: {} };
 let selectedId = null;
 
+// Track whether the user manually edited the icon field in the modal
+let iconManuallyChanged = false;
+
 // Set of group IDs that are currently collapsed
 const collapsedGroups = new Set();
 
@@ -39,6 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('input[name="f-type"]').forEach(radio => {
     radio.addEventListener('change', onTypeChange);
   });
+
+  // Auto-populate icon when type is 'file' and icon hasn't been manually changed
+  document.getElementById('f-path').addEventListener('input', (e) => {
+    const currentType = document.querySelector('input[name="f-type"]:checked');
+    if (currentType && currentType.value === 'file' && !iconManuallyChanged) {
+      document.getElementById('f-icon').value = iconForFile(e.target.value);
+    }
+  });
+
+  // Track manual changes to the icon field
+  document.getElementById('f-icon').addEventListener('input', () => { iconManuallyChanged = true; });
 
   // Detail label autosave on blur
   document.getElementById('detail-label').addEventListener('blur', onDetailLabelBlur);
@@ -127,6 +141,12 @@ function buildTreeLI(item, parentArray, index) {
   const li = document.createElement('li');
   li.className = 'tree-item';
   li.dataset.id = item.id;
+  li.dataset.type = item.type || '';
+  if (item.type === 'file') {
+    const filename = (item.path || '').split(/[\\/]/).pop();
+    const dot = filename.lastIndexOf('.');
+    li.dataset.ext = dot > 0 ? filename.slice(dot + 1).toLowerCase() : '';
+  }
   if (selectedId === item.id) li.classList.add('selected');
 
   // Drag and drop
@@ -177,7 +197,7 @@ function buildTreeLI(item, parentArray, index) {
 
     const icon = document.createElement('span');
     icon.className = 'tree-icon';
-    icon.textContent = item.icon || (item.type === 'folder' ? '📁' : '🔗');
+    icon.textContent = item.icon || (item.type === 'folder' ? '📁' : item.type === 'file' ? iconForFile(item.path) : '🔗');
     row.appendChild(icon);
 
     const label = document.createElement('span');
@@ -204,6 +224,8 @@ function buildTreeLI(item, parentArray, index) {
         openItem(item);
         scanFolder(item.path || '');
       } else if (item.type === 'url') {
+        openItem(item);
+      } else if (item.type === 'file') {
         openItem(item);
       }
     });
@@ -296,7 +318,7 @@ function renderDetailPanel(item) {
   const openBtn  = document.getElementById('btn-detail-open');
   const sections = document.getElementById('detail-sections');
 
-  iconEl.textContent  = item.icon || (item.type === 'folder' ? '📁' : item.type === 'url' ? '🔗' : '📂');
+  iconEl.textContent  = item.icon || (item.type === 'folder' ? '📁' : item.type === 'url' ? '🔗' : item.type === 'file' ? iconForFile(item.path) : '📂');
   labelEl.value       = item.label || '';
   labelEl.dataset.id  = item.id;
 
@@ -311,11 +333,52 @@ function renderDetailPanel(item) {
     openBtn.onclick = () => openItem(item);
     // scan sections (including notes) are rendered by renderScanSkeleton / renderScanResults
     sections.innerHTML = '';
+  } else if (item.type === 'file') {
+    pathEl.textContent = item.path || '';
+    openBtn.style.display = 'inline-block';
+    openBtn.onclick = () => openItem(item);
+    sections.innerHTML = '';
+    renderNoteSection(item, sections);
   } else {
     pathEl.textContent = '';
     openBtn.style.display = 'none';
     sections.innerHTML = '';
     renderNoteSection(item, sections);
+  }
+
+  // Botão Copiar
+  const copyBtn = document.getElementById('btn-detail-copy');
+  const copyTarget = item.path || item.url || null;
+  if (copyTarget) {
+    copyBtn.style.display = '';
+    copyBtn.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(copyTarget);
+        copyBtn.textContent = '✔ Copiado!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = '⎘ Copiar';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      } catch {
+        // execCommand is deprecated but serves as a last-resort fallback
+        // for non-HTTPS or older WebView environments
+        const ta = document.createElement('textarea');
+        ta.value = copyTarget;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        copyBtn.textContent = '✔ Copiado!';
+        copyBtn.classList.add('copied');
+        setTimeout(() => {
+          copyBtn.textContent = '⎘ Copiar';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      }
+    };
+  } else {
+    copyBtn.style.display = 'none';
   }
 }
 
@@ -583,6 +646,7 @@ function openModal(mode, parentId, item) {
   document.getElementById('f-icon').value  = '';
   document.getElementById('f-notes').value = '';
   document.querySelector('input[name="f-type"][value="folder"]').checked = true;
+  iconManuallyChanged = false;
   onTypeChange();
 
   if (mode === 'edit' && item) {
@@ -593,6 +657,8 @@ function openModal(mode, parentId, item) {
     document.getElementById('f-notes').value = item.notes || '';
     const radio = document.querySelector(`input[name="f-type"][value="${item.type}"]`);
     if (radio) { radio.checked = true; onTypeChange(); }
+    // If item already has a custom icon in edit mode, treat it as manually set
+    if (item.icon) iconManuallyChanged = true;
   } else {
     title.textContent = 'Novo Item';
   }
@@ -631,25 +697,21 @@ function onModalSave() {
 }
 
 function onTypeChange() {
-  const type = document.querySelector('input[name="f-type"]:checked');
-  if (!type) return;
+  const typeEl = document.querySelector('input[name="f-type"]:checked');
+  if (!typeEl) return;
+  const type = typeEl.value;
 
-  const fgPath  = document.getElementById('fg-path');
-  const lblPath = document.getElementById('lbl-path');
-  const fPath   = document.getElementById('f-path');
+  const labels = { group: null, folder: 'Caminho da pasta', url: 'URL', file: 'Caminho do arquivo' };
+  const placeholders = {
+    group: '',
+    folder: 'C:\\caminho\\da\\pasta ou \\\\servidor\\share',
+    url: 'https://...',
+    file: 'C:\\caminho\\do\\arquivo.xlsx'
+  };
 
-  if (type.value === 'group') {
-    fgPath.style.display = 'none';
-  } else {
-    fgPath.style.display = '';
-    if (type.value === 'url') {
-      lblPath.textContent = 'URL';
-      fPath.placeholder = 'https://...';
-    } else {
-      lblPath.textContent = 'Caminho';
-      fPath.placeholder = 'C:\\caminho\\da\\pasta';
-    }
-  }
+  document.getElementById('lbl-path').textContent = labels[type] || 'Caminho';
+  document.getElementById('f-path').placeholder = placeholders[type] || '';
+  document.getElementById('fg-path').style.display = type === 'group' ? 'none' : '';
 }
 
 // ── Drag & Drop ──────────────────────────────────────────────────────────────
@@ -699,6 +761,24 @@ function onDragEnd(li) {
   draggedId = null;
   draggedParentRef = null;
   document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+// ── File icon helper ─────────────────────────────────────────────────────────
+function iconForFile(path) {
+  if (!path) return '📄';
+  const filename = path.split(/[\\/]/).pop();       // handle both / and \
+  const dot = filename.lastIndexOf('.');
+  const ext = dot > 0 ? filename.slice(dot + 1).toLowerCase() : '';
+  const map = {
+    xlsx: '📊', xls: '📊', csv: '📊',
+    pdf: '📕',
+    docx: '📝', doc: '📝',
+    pptx: '📽️', ppt: '📽️',
+    txt: '📋', log: '📋',
+    zip: '🗜️', rar: '🗜️',
+    png: '🖼️', jpg: '🖼️', jpeg: '🖼️',
+  };
+  return map[ext] || '📄';
 }
 
 // ── Utility ──────────────────────────────────────────────────────────────────
@@ -771,3 +851,69 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// ── Busca cruzada ──────────────────────────────────────────────────────────
+let searchDebounce = null;
+
+function normalizeSearch(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function itemMatchesQuery(item, q) {
+  if (!q) return true;
+  const fields = [item.label, item.path, item.notes, ...(item.tags || [])];
+  return fields.some(f => normalizeSearch(f).includes(q));
+}
+
+function applySearch(q) {
+  const norm = normalizeSearch(q);
+  const items = document.querySelectorAll('.tree-item');
+  items.forEach(el => {
+    el.classList.remove('search-hidden', 'search-match');
+  });
+  if (!norm) {
+    renderTree();
+    return;
+  }
+
+  items.forEach(el => {
+    const id = el.dataset.id;
+    const found = findItemById(config.tree, id);
+    const item = found ? found.item : null;
+    if (!item) return;
+    if (itemMatchesQuery(item, norm)) {
+      el.classList.add('search-match');
+      // Show ancestors and expand any collapsed tree-children containers
+      let node = el;
+      while (true) {
+        // Walk up through <ul class="tree-children"> if present
+        const ul = node.parentElement;
+        if (ul && ul.classList.contains('tree-children')) {
+          ul.classList.remove('collapsed');  // expand the container
+          // Sync chevron icon to reflect expanded state
+          const chevron = ul.previousElementSibling?.querySelector('.tree-chevron');
+          if (chevron) chevron.classList.add('open');
+        }
+        const parentLi = node.parentElement?.closest('.tree-item');
+        if (!parentLi) break;
+        parentLi.classList.remove('search-hidden');
+        node = parentLi;
+      }
+    } else {
+      el.classList.add('search-hidden');
+    }
+  });
+}
+
+document.getElementById('search-input')?.addEventListener('input', e => {
+  clearTimeout(searchDebounce);
+  const q = e.target.value.trim();
+  document.getElementById('search-clear').style.display = q ? '' : 'none';
+  searchDebounce = setTimeout(() => applySearch(q), 200);
+});
+
+document.getElementById('search-clear')?.addEventListener('click', () => {
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
+  applySearch('');
+});

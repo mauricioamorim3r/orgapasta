@@ -12,3 +12,7 @@ Thumbs.db
 
 # NavMed runtime config (auto-generated, not committed)
 navmed/config.json
+
+# Tool caches
+.superpowers/
+.claude/

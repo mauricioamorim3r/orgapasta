@@ -97,6 +97,59 @@ body {
   padding: 10px 12px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Widget controls ──────────────────────────────────────────────────────── */
+.widget-controls {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.widget-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.widget-btn-row {
+  display: flex;
+  gap: 6px;
+}
+.btn-widget {
+  flex: 1;
+  padding: 5px 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-widget:hover { background: #2563eb; }
+.btn-widget-secondary {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-widget-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.widget-status {
+  font-size: 10px;
+  color: var(--success);
+  min-height: 14px;
+  margin-top: 4px;
+  text-align: center;
 }
 
 #btn-add-root {
@@ -401,6 +454,23 @@ body {
 
 .open-btn:hover {
   background: #2563eb;
+}
+
+.copy-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied {
+  border-color: var(--success);
+  color: var(--success);
+  background: rgba(34,197,94,.08);
 }
 
 /* ── SUMMARY SECTIONS ───────────────────────────────────────────────────────── */
@@ -793,6 +863,19 @@ body {
   color: var(--text);
 }
 
+/* ── FILE ITEM TYPE ─────────────────────────────────────────────────────────── */
+.tree-item[data-type="file"] .tree-label {
+  font-style: italic;
+}
+.tree-item[data-type="file"]::after {
+  content: attr(data-ext);
+  font-size: 9px;
+  color: var(--muted);
+  margin-left: 4px;
+  text-transform: uppercase;
+  opacity: .7;
+}
+
 /* ── EMPTY TREE STATE ───────────────────────────────────────────────────────── */
 .tree-empty {
   padding: 24px 16px;
@@ -801,3 +884,41 @@ body {
   font-size: 12px;
   line-height: 1.6;
 }
+
+/* ── SEARCH BAR ─────────────────────────────────────────────────────────────── */
+#search-bar {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+#search-input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 28px 5px 10px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+#search-input:focus { border-color: var(--accent); }
+#search-input::placeholder { color: var(--muted); }
+#search-clear {
+  position: absolute;
+  right: 18px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+#search-clear:hover { color: var(--text); }
+
+/* Itens ocultos durante filtro */
+.tree-item.search-hidden { display: none; }
+.tree-item.search-match .tree-label { color: var(--accent); }

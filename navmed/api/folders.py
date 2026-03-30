@@ -10,6 +10,7 @@ Endpoints:
 """
 
 import os
+import unicodedata
 import uuid
 import webbrowser
 from datetime import datetime
@@ -239,3 +240,46 @@ def make_dirs():
 
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+# ── GET /api/search ────────────────────────────────────────────────────────────
+@folders_bp.route("/api/search", methods=["GET"])
+def search_items():
+    """
+    Query param: ?q=termo
+    Busca recursivamente em todos os itens do config (label, path, notes, tags).
+    Retorna lista de itens que batem, com breadcrumb de ancestrais.
+    """
+    from api.config_api import load_config
+
+    q = request.args.get("q", "").strip().lower()
+    if not q:
+        return jsonify({"ok": True, "results": []})
+
+    config = load_config()
+    results = []
+
+    def _normalize(s):
+        return unicodedata.normalize("NFD", (s or "").lower())
+
+    def _matches(item):
+        fields = [item.get("label", ""), item.get("path", ""),
+                  item.get("notes", "")] + item.get("tags", [])
+        return any(_normalize(q) in _normalize(f) for f in fields)
+
+    def _walk(nodes, breadcrumb):
+        for node in nodes:
+            crumb = breadcrumb + [node.get("label", "")]
+            if _matches(node):
+                results.append({
+                    "id": node.get("id"),
+                    "label": node.get("label"),
+                    "type": node.get("type"),
+                    "path": node.get("path", ""),
+                    "icon": node.get("icon", "📁"),
+                    "breadcrumb": crumb[:-1],
+                })
+            _walk(node.get("children", []), crumb)
+
+    _walk(config.get("tree", []), [])
+    return jsonify({"ok": True, "results": results})

@@ -15,12 +15,31 @@
       <a href="/creator" class="creator-link">+ Nova Estrutura</a>
     </div>
 
+    <div id="search-bar">
+      <input id="search-input" type="text" placeholder="🔍  Buscar em tudo…"
+             autocomplete="off" spellcheck="false">
+      <button id="search-clear" style="display:none" aria-label="Limpar busca">✕</button>
+    </div>
+
     <div id="tree-container">
       <!-- rendered by app.js -->
     </div>
 
     <div id="sidebar-footer">
       <button id="btn-add-root">+ Adicionar grupo raiz</button>
+
+      <div class="widget-controls">
+        <span class="widget-label">Widget flutuante</span>
+        <div class="widget-btn-row">
+          <button id="btn-launch-widget" class="btn-widget" title="Abre o widget na tela">
+            ◉ Lançar widget
+          </button>
+          <button id="btn-startup-widget" class="btn-widget-secondary" title="Iniciar automaticamente com o Windows">
+            ⏻ Startup
+          </button>
+        </div>
+        <div id="widget-status" class="widget-status"></div>
+      </div>
     </div>
   </div>
 
@@ -47,6 +66,8 @@
         </div>
         <div class="detail-header-actions">
           <button id="btn-detail-open" class="open-btn" style="display:none">Abrir</button>
+          <button id="btn-detail-copy" class="copy-btn" style="display:none"
+                  title="Copiar caminho para a área de transferência">⎘ Copiar</button>
         </div>
       </div>
 
@@ -84,6 +105,9 @@
             <label class="radio-label">
               <input type="radio" name="f-type" value="url" id="r-url"> URL
             </label>
+            <label class="radio-label">
+              <input type="radio" name="f-type" value="file" id="r-file"> Arquivo
+            </label>
           </div>
         </div>
 
@@ -114,5 +138,28 @@
   </div>
 
   <script src="/static/app.js"></script>
+  <script>
+    // ── Widget standalone controls ──────────────────────────────────────────
+    document.getElementById('btn-launch-widget').addEventListener('click', async () => {
+      const el = document.getElementById('widget-status');
+      el.textContent = 'Iniciando…';
+      try {
+        const r = await fetch('/api/widget/launch', { method: 'POST' });
+        const d = await r.json();
+        el.textContent = d.ok ? '✔ Widget aberto' : '⚠ ' + (d.error || 'Erro');
+        setTimeout(() => el.textContent = '', 3000);
+      } catch { el.textContent = '⚠ Falha ao contatar servidor'; }
+    });
+
+    document.getElementById('btn-startup-widget').addEventListener('click', async () => {
+      const el = document.getElementById('widget-status');
+      try {
+        const r = await fetch('/api/widget/startup', { method: 'POST' });
+        const d = await r.json();
+        el.textContent = d.message || (d.ok ? '✔ Configurado' : '⚠ Erro');
+        setTimeout(() => el.textContent = '', 4000);
+      } catch { el.textContent = '⚠ Falha ao contatar servidor'; }
+    });
+  </script>
 </body>
 </html>
