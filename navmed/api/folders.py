@@ -10,6 +10,7 @@ Endpoints:
 """
 
 import os
+import unicodedata
 import uuid
 import webbrowser
 from datetime import datetime
@@ -259,7 +260,6 @@ def search_items():
     results = []
 
     def _normalize(s):
-        import unicodedata
         return unicodedata.normalize("NFD", (s or "").lower())
 
     def _matches(item):

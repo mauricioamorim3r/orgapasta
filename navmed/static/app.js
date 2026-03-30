@@ -890,6 +890,9 @@ function applySearch(q) {
         const ul = node.parentElement;
         if (ul && ul.classList.contains('tree-children')) {
           ul.classList.remove('collapsed');  // expand the container
+          // Sync chevron icon to reflect expanded state
+          const chevron = ul.previousElementSibling?.querySelector('.tree-chevron');
+          if (chevron) chevron.classList.add('open');
         }
         const parentLi = node.parentElement?.closest('.tree-item');
         if (!parentLi) break;
