@@ -12,3 +12,8 @@ Thumbs.db
 
 # NavMed runtime config (auto-generated, not committed)
 navmed/config.json
+
+# Menu Analyzer runtime data (auto-generated, not committed)
+navmed/menus_db.json
+navmed/exports/
+navmed/uploads/

@@ -17,6 +17,7 @@ from flask import Flask, render_template
 
 from api.config_api import config_bp
 from api.folders import folders_bp
+from api.menu_analyzer import menu_analyzer_bp
 
 # ── App ────────────────────────────────────────────────────────────────────────
 app = Flask(__name__)
@@ -25,6 +26,7 @@ PORT = 5200
 # Register blueprints
 app.register_blueprint(config_bp)
 app.register_blueprint(folders_bp)
+app.register_blueprint(menu_analyzer_bp)
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -36,6 +38,11 @@ def index():
 @app.route("/creator")
 def creator():
     return render_template("creator.html")
+
+
+@app.route("/menu-analyzer")
+def menu_analyzer():
+    return render_template("menu_analyzer.html")
 
 
 # ── Launch helpers ─────────────────────────────────────────────────────────────
