@@ -98,14 +98,17 @@ async function submitAnalysis() {
   const restaurantName = document.getElementById('restaurant-name').value.trim()
   const locationNotes  = document.getElementById('location-notes').value.trim()
   const saveHistory    = document.getElementById('save-to-history').checked
+  const providerEl     = document.querySelector('[name="provider"]:checked')
+  const provider       = providerEl ? providerEl.value : 'claude'
 
-  showProcessingState()
+  showProcessingState(provider)
 
   const formData = new FormData()
   selectedPhotos.forEach(f => formData.append('photos[]', f))
   formData.append('restaurant_name', restaurantName)
   formData.append('location_notes', locationNotes)
   formData.append('save', saveHistory ? 'true' : 'false')
+  formData.append('provider', provider)
 
   try {
     const res = await fetch('/api/menus/analyze', { method: 'POST', body: formData })
@@ -121,14 +124,24 @@ async function submitAnalysis() {
   }
 }
 
-function showProcessingState() {
+const PROVIDER_META = {
+  claude: { icon: '🟣', label: 'Claude Sonnet',      hint: 'Claude está examinando cada prato, preço e ingrediente' },
+  openai: { icon: '🟢', label: 'GPT-4o',             hint: 'GPT-4o está examinando cada prato, preço e ingrediente' },
+  gemini: { icon: '🔵', label: 'Gemini 2.0 Flash',   hint: 'Gemini está examinando cada prato, preço e ingrediente' },
+  groq:   { icon: '⚡', label: 'Llama 4 Scout',      hint: 'Llama 4 Scout está examinando cada prato e preço' },
+}
+
+function showProcessingState(provider = 'claude') {
   document.getElementById('state-upload').style.display = 'none'
   document.getElementById('state-processing').style.display = ''
   document.getElementById('state-results').style.display = 'none'
 
+  const meta = PROVIDER_META[provider] || PROVIDER_META.claude
+  document.getElementById('processing-model').textContent = meta.hint
+
   const messages = [
     'Enviando fotos...',
-    'Claude está analisando o cardápio...',
+    `${meta.icon} ${meta.label} está analisando o cardápio...`,
     'Identificando pratos e preços...',
     'Calculando estimativas nutricionais...',
     'Gerando recomendações inteligentes...',
@@ -229,6 +242,8 @@ function renderSummaryBar(summary, data) {
     chips.push(`<span class="chip" style="background:var(--bg-deep);color:var(--muted)">${summary.total_items} pratos</span>`)
   if (data.restaurant_name && data.restaurant_name !== 'Restaurante sem nome')
     chips.push(`<span class="chip" style="background:var(--bg-deep);color:var(--muted)">🏠 ${escapeHTML(data.restaurant_name)}</span>`)
+  if (data.model_used)
+    chips.push(`<span class="badge-model-used">${(PROVIDER_META[data.provider] || PROVIDER_META.claude).icon} ${escapeHTML(data.model_used)}</span>`)
 
   const dc = summary.dietary_counts || {}
   if (dc.vegan)
@@ -479,6 +494,7 @@ function renderHistoryList(menus) {
         <div class="history-chips">
           ${m.price_range ? `<span class="chip chip-price">${m.price_range}</span>` : ''}
           ${m.total_items ? `<span class="chip" style="background:var(--bg-deep);color:var(--muted)">${m.total_items} pratos</span>` : ''}
+          ${m.provider ? `<span class="badge-model-used">${(PROVIDER_META[m.provider] || PROVIDER_META.claude).icon} ${escapeHTML((PROVIDER_META[m.provider] || PROVIDER_META.claude).label)}</span>` : ''}
         </div>
       </div>
       <div class="history-actions" onclick="event.stopPropagation()">

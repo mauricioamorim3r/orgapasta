@@ -1,11 +1,11 @@
 """
 NavMed — Menu Analyzer API
 ===========================
-Analisa fotos de cardápios com Claude Vision e retorna dados estruturados ricos:
-categorias, pratos, preços, estimativas nutricionais, alérgenos, badges inteligentes.
+Analisa fotos de cardápios com múltiplos provedores de IA (Claude, GPT-4o, Gemini, Groq).
+Retorna dados estruturados ricos: categorias, pratos, preços, nutrição, alérgenos, badges.
 
 Endpoints:
-  POST   /api/menus/analyze          → Upload de fotos + análise Claude Vision
+  POST   /api/menus/analyze          → Upload de fotos + análise via LLM escolhido
   GET    /api/menus/history          → Lista menus salvos (paginado)
   GET    /api/menus/<menu_id>        → Detalhe de um menu
   DELETE /api/menus/<menu_id>        → Remove menu salvo
@@ -30,6 +30,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"))
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+OPENAI_API_KEY    = os.environ.get("OPENAI_API_KEY", "")
+GEMINI_API_KEY    = os.environ.get("GEMINI_API_KEY", "")
+GROQ_API_KEY      = os.environ.get("GROQ_API_KEY", "")
 MENUS_DB_PATH = os.path.join(BASE_DIR, "menus_db.json")
 EXPORTS_DIR = os.path.join(BASE_DIR, "exports")
 UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
@@ -270,6 +273,148 @@ def call_claude_vision(images: list, restaurant_name: str) -> dict:
     return json.loads(raw_text)
 
 
+# ── Helper compartilhado ──────────────────────────────────────────────────────
+
+def _strip_fences(text: str) -> str:
+    """Remove markdown code fences que alguns modelos inserem ao redor do JSON."""
+    text = text.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        text = "\n".join(lines[1:])
+        if "```" in text:
+            text = text[: text.rfind("```")]
+    return text.strip()
+
+
+def _user_prompt(n_images: int, restaurant_name: str) -> str:
+    return (
+        f"Analise o cardápio do restaurante mostrado nas {n_images} foto(s) acima.\n"
+        f"Nome do restaurante (se conhecido): {restaurant_name or 'Desconhecido'}\n"
+        "Retorne a análise completa em JSON conforme o schema definido."
+    )
+
+
+# ── OpenAI Vision (GPT-4o) ────────────────────────────────────────────────────
+
+def call_openai_vision(images: list, restaurant_name: str) -> dict:
+    """Analisa cardápio via OpenAI GPT-4o Vision."""
+    if not OPENAI_API_KEY or OPENAI_API_KEY == "sua_chave_openai_aqui":
+        raise RuntimeError(
+            "OPENAI_API_KEY não configurada. "
+            "Edite navmed/.env e adicione sua chave da OpenAI."
+        )
+    from openai import OpenAI
+    client = OpenAI(api_key=OPENAI_API_KEY)
+
+    content = []
+    for b64_data, mime_type in images:
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{mime_type};base64,{b64_data}",
+                "detail": "high",
+            },
+        })
+    content.append({"type": "text", "text": _user_prompt(len(images), restaurant_name)})
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        max_tokens=4096,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": content},
+        ],
+    )
+    return json.loads(_strip_fences(response.choices[0].message.content))
+
+
+# ── Google Gemini Vision (REST API — sem dependência extra) ───────────────────
+
+def call_gemini_vision(images: list, restaurant_name: str) -> dict:
+    """Analisa cardápio via Gemini 2.0 Flash REST API (urllib stdlib)."""
+    if not GEMINI_API_KEY or GEMINI_API_KEY == "sua_chave_gemini_aqui":
+        raise RuntimeError(
+            "GEMINI_API_KEY não configurada. "
+            "Edite navmed/.env e adicione sua chave do Google AI Studio."
+        )
+    import urllib.request as _req
+    import urllib.error as _err
+
+    parts = []
+    for b64_data, mime_type in images:
+        parts.append({"inline_data": {"mime_type": mime_type, "data": b64_data}})
+    parts.append({"text": SYSTEM_PROMPT + "\n\n" + _user_prompt(len(images), restaurant_name)})
+
+    payload = json.dumps({
+        "contents": [{"parts": parts}],
+        "generationConfig": {"maxOutputTokens": 4096},
+    }).encode("utf-8")
+
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    )
+    req = _req.Request(url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with _req.urlopen(req, timeout=120) as resp:
+            result = json.loads(resp.read())
+    except _err.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Gemini API erro {e.code}: {body[:200]}")
+
+    raw_text = result["candidates"][0]["content"]["parts"][0]["text"]
+    return json.loads(_strip_fences(raw_text))
+
+
+# ── Groq Vision (Llama 4 Scout — gratuito) ───────────────────────────────────
+
+def call_groq_vision(images: list, restaurant_name: str) -> dict:
+    """Analisa cardápio via Groq Llama 4 Scout (gratuito com rate limits)."""
+    if not GROQ_API_KEY or GROQ_API_KEY == "sua_chave_groq_aqui":
+        raise RuntimeError(
+            "GROQ_API_KEY não configurada. "
+            "Crie uma chave gratuita em https://console.groq.com/ e edite navmed/.env."
+        )
+    from groq import Groq
+    client = Groq(api_key=GROQ_API_KEY)
+
+    content = []
+    for b64_data, mime_type in images:
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:{mime_type};base64,{b64_data}"},
+        })
+    content.append({
+        "type": "text",
+        "text": SYSTEM_PROMPT + "\n\n" + _user_prompt(len(images), restaurant_name),
+    })
+
+    response = client.chat.completions.create(
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        messages=[{"role": "user", "content": content}],
+        max_tokens=4096,
+    )
+    return json.loads(_strip_fences(response.choices[0].message.content))
+
+
+# ── Dispatch multi-provedor ───────────────────────────────────────────────────
+
+PROVIDERS: dict[str, tuple[str, callable]] = {
+    "claude": ("Claude Sonnet 4.6 · Anthropic", call_claude_vision),
+    "openai": ("GPT-4o · OpenAI",               call_openai_vision),
+    "gemini": ("Gemini 2.0 Flash · Google",      call_gemini_vision),
+    "groq":   ("Llama 4 Scout · Groq",           call_groq_vision),
+}
+
+
+def call_llm_vision(images: list, restaurant_name: str, provider: str = "claude") -> tuple:
+    """Despacha para o provedor selecionado. Retorna (analysis_dict, model_label)."""
+    if provider not in PROVIDERS:
+        provider = "claude"
+    model_label, fn = PROVIDERS[provider]
+    return fn(images, restaurant_name), model_label
+
+
 # ── Construção do registro de menu ────────────────────────────────────────────
 
 def build_menu_record(
@@ -278,6 +423,8 @@ def build_menu_record(
     location_notes: str,
     analysis: dict,
     photo_count: int,
+    provider: str = "claude",
+    model_used: str = "",
 ) -> dict:
     summary = analysis.get("summary", {})
     return {
@@ -286,6 +433,8 @@ def build_menu_record(
         "analyzed_at": datetime.now(timezone.utc).isoformat(),
         "location_notes": location_notes or "",
         "photo_count": photo_count,
+        "provider": provider,
+        "model_used": model_used,
         "price_range": summary.get("price_range", ""),
         "categories": analysis.get("categories", []),
         "summary": summary,
@@ -524,11 +673,14 @@ menu_analyzer_bp = Blueprint("menu_analyzer_bp", __name__)
 
 @menu_analyzer_bp.route("/api/menus/analyze", methods=["POST"])
 def analyze_menu():
-    """Upload de fotos + análise via Claude Vision."""
+    """Upload de fotos + análise via LLM escolhido (claude/openai/gemini/groq)."""
     files = request.files.getlist("photos[]")
     restaurant_name = request.form.get("restaurant_name", "").strip()
-    location_notes = request.form.get("location_notes", "").strip()
+    location_notes  = request.form.get("location_notes", "").strip()
     save_to_history = request.form.get("save", "true").lower() == "true"
+    provider = request.form.get("provider", "claude").strip().lower()
+    if provider not in PROVIDERS:
+        provider = "claude"
 
     try:
         images = validate_images(files)
@@ -536,16 +688,18 @@ def analyze_menu():
         return jsonify({"ok": False, "error": str(e)}), 422
 
     try:
-        analysis = call_claude_vision(images, restaurant_name)
+        analysis, model_used = call_llm_vision(images, restaurant_name, provider)
     except RuntimeError as e:
         return jsonify({"ok": False, "error": str(e)}), 503
     except json.JSONDecodeError as e:
-        return jsonify({"ok": False, "error": f"Claude retornou resposta inválida: {e}"}), 500
+        return jsonify({"ok": False, "error": f"O modelo retornou resposta inválida: {e}"}), 500
     except Exception as e:
         return jsonify({"ok": False, "error": f"Erro na análise: {e}"}), 500
 
     menu_id = str(uuid.uuid4())
-    record = build_menu_record(menu_id, restaurant_name, location_notes, analysis, len(images))
+    record = build_menu_record(
+        menu_id, restaurant_name, location_notes, analysis, len(images), provider, model_used
+    )
 
     if save_to_history:
         db_save_menu(record)
