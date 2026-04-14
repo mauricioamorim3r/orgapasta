@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FotoCardapio AI</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Photo menu intelligence</p>
+        <h1>FotoCardapio AI</h1>
+        <p class="hero-text">
+          Transforme fotos de cardapio em um painel editorial com pratos, precos, alergenos,
+          ingredientes, pistas de culinaria e recomendacoes de venda. As imagens ficam salvas por analise,
+          prontas para auditoria, exportacao e evolucao do produto.
+        </p>
+      </div>
+      <div class="hero-panel">
+        <div class="hero-stat">
+          <span>Fotos por rodada</span>
+          <strong>5</strong>
+        </div>
+        <div class="hero-stat">
+          <span>Arquivos por analise</span>
+          <strong>Fotos + JSON</strong>
+        </div>
+        <div class="hero-stat">
+          <span>Providers</span>
+          <strong>4</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <div class="tab-bar" role="tablist" aria-label="Navegacao principal">
+        <button class="tab-btn active" id="tab-btn-analyze" type="button" data-tab="analyze" onclick="switchTab('analyze')">Analisar</button>
+        <button class="tab-btn" id="tab-btn-history" type="button" data-tab="history" onclick="switchTab('history')">Historico</button>
+      </div>
+
+      <section id="tab-analyze" class="tab-panel" aria-labelledby="tab-btn-analyze">
+        <div id="state-upload">
+          <input id="file-input" type="file" accept="image/*" multiple hidden>
+
+          <button id="dropzone" class="upload-zone" type="button" aria-label="Selecionar fotos do cardapio">
+            <span class="upload-kicker">Upload de imagens</span>
+            <strong>Arraste as fotos do cardapio ou clique para selecionar</strong>
+            <span>JPEG, PNG, WebP ou GIF. Ate 5 fotos. Maximo de 5 MB por arquivo.</span>
+          </button>
+
+          <div id="thumbnail-strip" class="thumbnail-strip" aria-live="polite"></div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Nome do restaurante</span>
+              <input id="restaurant-name" type="text" placeholder="Ex: Bistro Central">
+            </label>
+            <label class="field">
+              <span>Localizacao ou observacoes</span>
+              <input id="location-notes" type="text" placeholder="Ex: Piso terreo, shopping ou endereco">
+            </label>
+          </div>
+
+          <div class="archive-note" aria-live="polite">
+            Cada analise cria uma pasta propria com as fotos originais. Mesmo sem mandar para o historico,
+            a rodada fica pronta para exportacao e revisao tecnica.
+          </div>
+
+          <div class="provider-block">
+            <div class="section-label">Modelo de IA</div>
+            <div class="provider-grid">
+              <label class="provider-option">
+                <input type="radio" name="provider" value="claude" checked>
+                <span class="provider-card">
+                  <strong>Claude</strong>
+                  <small>Anthropic</small>
+                </span>
+              </label>
+              <label class="provider-option">
+                <input type="radio" name="provider" value="openai">
+                <span class="provider-card">
+                  <strong>GPT-4o</strong>
+                  <small>OpenAI</small>
+                </span>
+              </label>
+              <label class="provider-option">
+                <input type="radio" name="provider" value="gemini">
+                <span class="provider-card">
+                  <strong>Gemini 2.0</strong>
+                  <small>Google</small>
+                </span>
+              </label>
+              <label class="provider-option">
+                <input type="radio" name="provider" value="groq">
+                <span class="provider-card">
+                  <strong>Llama 4</strong>
+                  <small>Groq</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <label class="checkbox-row" for="save-to-history">
+              <input id="save-to-history" type="checkbox" checked>
+              <span>Salvar no historico</span>
+            </label>
+            <button class="primary-btn" id="btn-analyze" type="button" disabled onclick="submitAnalysis()">Analisar cardapio</button>
+          </div>
+        </div>
+
+        <div id="state-processing" class="processing-state" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="processing-title">Processando fotos</p>
+          <p id="processing-status" class="processing-copy" role="status" aria-live="polite">Enviando arquivos...</p>
+          <p id="processing-model" class="processing-model"></p>
+        </div>
+
+        <div id="state-results" hidden>
+          <div class="result-actions">
+            <button class="ghost-btn" type="button" onclick="resetToUpload()">Nova analise</button>
+            <button class="ghost-btn" type="button" onclick="exportCurrentMenu()">Exportar HTML</button>
+            <button class="ghost-btn" type="button" onclick="switchTab('history')">Abrir historico</button>
+          </div>
+
+          <div id="results-photo-gallery"></div>
+          <div id="results-summary-bar"></div>
+          <div id="results-insights"></div>
+          <div id="results-highlights"></div>
+          <div id="results-price-intel"></div>
+          <div id="results-categories"></div>
+          <div id="results-allergen-map"></div>
+          <div id="results-raw-analysis"></div>
+        </div>
+      </section>
+
+      <section id="tab-history" class="tab-panel" aria-labelledby="tab-btn-history" hidden>
+        <div id="compare-banner" class="compare-banner" hidden>
+          <span id="compare-banner-text">Selecione o segundo cardapio.</span>
+          <button class="ghost-btn small-btn" type="button" onclick="cancelCompare()">Cancelar</button>
+        </div>
+
+        <label class="search-field" for="history-search">
+          <span>Buscar restaurante</span>
+          <input id="history-search" type="text" placeholder="Digite parte do nome do restaurante">
+        </label>
+
+        <div id="history-list"></div>
+
+        <div id="compare-view" hidden>
+          <div class="compare-header">
+            <h2>Comparacao de cardapios</h2>
+            <button class="ghost-btn small-btn" type="button" onclick="closeCompareView()">Fechar</button>
+          </div>
+          <div id="compare-grid" class="compare-grid"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
