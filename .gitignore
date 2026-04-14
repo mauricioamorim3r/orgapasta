@@ -4,6 +4,7 @@ __pycache__/
 .env
 venv/
 env/
+.venv/
 *.egg-info/
 dist/
 build/
@@ -17,3 +18,16 @@ navmed/config.json
 navmed/menus_db.json
 navmed/exports/
 navmed/uploads/
+
+# FotoCardapio AI runtime data (auto-generated, not committed)
+cardapio_ai/.env
+cardapio_ai/data/menus_db.json
+cardapio_ai/data/*
+!cardapio_ai/data/.gitkeep
+cardapio_ai/exports/*
+!cardapio_ai/exports/.gitkeep
+cardapio_ai/uploads/*
+!cardapio_ai/uploads/.gitkeep
+cardapio_ai/__pycache__/
+cardapio_ai/api/__pycache__/
+cardapio_ai/services/__pycache__/
